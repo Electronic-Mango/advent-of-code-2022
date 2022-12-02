@@ -3,14 +3,13 @@ package aoc2022.day2;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import aoc2022.util.Input;
+import aoc2022.util.InputLoader;
 
 public final class Solution1 {
-    private static final String INPUT = "src/main/resources/inputs/day2/input";
     private static final String SHAPE_SEPARATOR = " ";
 
     public static void main(final String[] args) {
-        final var result = Input.readLines(INPUT).stream()
+        final var result = InputLoader.readLines("day2").stream()
                 .map(shapes -> shapes.split(SHAPE_SEPARATOR))
                 .map(Arrays::stream)
                 .map(shapes -> shapes.map(Shape::parseShape))

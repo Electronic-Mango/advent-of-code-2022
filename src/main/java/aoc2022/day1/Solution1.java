@@ -5,15 +5,14 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
-import aoc2022.util.Input;
+import aoc2022.util.InputLoader;
 
 public final class Solution1 {
-    private static final String INPUT = "inputs/day1/input";
     private static final String ELF_SEPARATOR = System.lineSeparator() + System.lineSeparator();
     private static final String FOOD_SEPARATOR = System.lineSeparator();
 
     public static void main(final String[] args) {
-        final var input = Input.readFile(INPUT);
+        final var input = InputLoader.read("day1");
         final var result = Arrays.stream(input.split(ELF_SEPARATOR))
                 .map(elf -> elf.split(FOOD_SEPARATOR))
                 .map(Arrays::stream)

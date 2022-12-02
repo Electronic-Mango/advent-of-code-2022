@@ -1,19 +1,14 @@
 package aoc2022.day2v2;
 
-import java.util.Arrays;
-
-import aoc2022.util.Input;
+import aoc2022.util.InputLoader;
 
 public final class Solution1 {
-    private static final String INPUT = "src/main/resources/inputs/day2/input";
     private static final String SHAPE_SEPARATOR = " ";
 
     public static void main(final String[] args) {
-        final var result = Input.readLines(INPUT).stream()
+        final var result = InputLoader.readLines("day2").stream()
                 .map(shapes -> shapes.split(SHAPE_SEPARATOR))
-                .peek(shapes -> System.out.printf(Arrays.toString(shapes) + " "))
                 .mapToInt(Solution1::calculateResult)
-                .peek(System.out::println)
                 .sum();
         System.out.println(result);
     }
