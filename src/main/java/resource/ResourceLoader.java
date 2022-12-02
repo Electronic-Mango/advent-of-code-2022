@@ -1,4 +1,4 @@
-package util;
+package resource;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 
-import aoc2022.util.InputLoader;
+import aoc2022.input.InputLoader;
 
 public final class ResourceLoader {
     public static String loadResource(final String path) {

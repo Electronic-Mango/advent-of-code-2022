@@ -6,7 +6,7 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
-import aoc2022.util.InputLoader;
+import aoc2022.input.InputLoader;
 
 public final class Solution2 {
     private static final String ELF_SEPARATOR = System.lineSeparator() + System.lineSeparator();

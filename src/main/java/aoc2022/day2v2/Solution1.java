@@ -1,6 +1,6 @@
 package aoc2022.day2v2;
 
-import aoc2022.util.InputLoader;
+import aoc2022.input.InputLoader;
 
 public final class Solution1 {
     private static final String SHAPE_SEPARATOR = " ";

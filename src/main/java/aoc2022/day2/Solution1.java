@@ -3,7 +3,7 @@ package aoc2022.day2;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import aoc2022.util.InputLoader;
+import aoc2022.input.InputLoader;
 
 public final class Solution1 {
     private static final String SHAPE_SEPARATOR = " ";
