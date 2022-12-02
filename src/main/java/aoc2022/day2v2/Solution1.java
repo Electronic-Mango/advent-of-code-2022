@@ -9,8 +9,7 @@ public final class Solution1 {
     private static final String SHAPE_SEPARATOR = " ";
 
     public static void main(final String[] args) {
-        final var input = Input.readLines(INPUT);
-        final var result = input.stream()
+        final var result = Input.readLines(INPUT).stream()
                 .map(shapes -> shapes.split(SHAPE_SEPARATOR))
                 .peek(shapes -> System.out.printf(Arrays.toString(shapes) + " "))
                 .mapToInt(Solution1::calculateResult)
