@@ -3,7 +3,7 @@ package aoc2022.day2;
 import aoc2022.util.Input;
 
 public final class Solution2 {
-    private static final String INPUT = "inputs/day2/input";
+    private static final String INPUT = "src/main/resources/inputs/day2/input";
     private static final String SHAPE_SEPARATOR = " ";
 
     public static void main(final String[] args) {
