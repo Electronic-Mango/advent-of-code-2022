@@ -8,4 +8,12 @@ enum GameResult {
     GameResult(final int score) {
         this.score = score;
     }
+
+    public static GameResult parseResult(final String result) {
+        return switch (result) {
+            case "Y" -> GameResult.DRAW;
+            case "Z" -> GameResult.WIN;
+            default -> GameResult.LOSE;
+        };
+    }
 }

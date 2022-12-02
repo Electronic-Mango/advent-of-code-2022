@@ -22,23 +22,6 @@ public final class Solution1 {
     }
 
     public static int calculateScore(final Shape opponent, final Shape mine) {
-        final var matchResult = switch (mine) {
-            case ROCK -> switch (opponent) {
-                case ROCK -> GameResult.DRAW;
-                case PAPER -> GameResult.LOSE;
-                case SCISSORS -> GameResult.WIN;
-            };
-            case PAPER -> switch (opponent) {
-                case ROCK -> GameResult.WIN;
-                case PAPER -> GameResult.DRAW;
-                case SCISSORS -> GameResult.LOSE;
-            };
-            case SCISSORS -> switch (opponent) {
-                case ROCK -> GameResult.LOSE;
-                case PAPER -> GameResult.WIN;
-                case SCISSORS -> GameResult.DRAW;
-            };
-        };
-        return matchResult.score + mine.score;
+        return GameStates.getResult(opponent, mine).score + mine.score;
     }
 }
