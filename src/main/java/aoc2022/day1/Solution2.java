@@ -8,8 +8,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 
 import aoc2022.util.Input;
 
-public class Solution2 {
-    private static final String INPUT = "inputs/day1/input";
+public final class Solution2 {
+    private static final String INPUT = "inputs/day2/testinput";
     private static final String ELF_SEPARATOR = System.lineSeparator() + System.lineSeparator();
     private static final String FOOD_SEPARATOR = System.lineSeparator();
     private static final int ELVES_TO_CALCULATE = 3;
