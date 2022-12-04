@@ -1,10 +1,10 @@
 package aoc2022.day4;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import com.google.common.base.Splitter;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 
@@ -24,10 +24,8 @@ public final class Solution {
 
     private static long countOccurrences(final List<String> input, final Predicate<Pair<Range, Range>> filter) {
         return input.stream()
-                .map(line -> line.split(PAIR_SEPARATOR))
-                .map(Arrays::stream)
-                .map(pair -> pair.map(range -> range.split(RANGE_SEPARATOR)))
-                .map(pair -> pair.map((Arrays::stream)))
+                .map(line -> Splitter.on(PAIR_SEPARATOR).splitToStream(line))
+                .map(pair -> pair.map(range -> Splitter.on(RANGE_SEPARATOR).splitToStream(range)))
                 .map(pair -> pair.map(range -> range.map(NumberUtils::toInt)))
                 .map(pair -> pair.map(Stream::toList))
                 .map(pair -> pair.map(Pair::fromCollection))
