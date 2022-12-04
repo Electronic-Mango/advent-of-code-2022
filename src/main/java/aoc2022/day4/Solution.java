@@ -49,14 +49,14 @@ final class Range {
     }
 
     public static boolean overlapAtAll(final Pair<Range, Range> ranges) {
-        final Range range1 = ranges.getValue0();
-        final Range range2 = ranges.getValue1();
+        final var range1 = ranges.getValue0();
+        final var range2 = ranges.getValue1();
         return !(range1.end < range2.start || range1.start > range2.end);
     }
 
     public static boolean overlapFully(final Pair<Range, Range> ranges) {
-        final Range range1 = ranges.getValue0();
-        final Range range2 = ranges.getValue1();
+        final var range1 = ranges.getValue0();
+        final var range2 = ranges.getValue1();
         return range1.contains(range2) || range2.contains(range1);
     }
 
