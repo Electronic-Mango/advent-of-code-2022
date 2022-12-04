@@ -17,8 +17,8 @@ public final class Solution {
 
     public static void main(final String[] args) {
         final var input = InputLoader.readLines("day4");
-        final var resultPart1 = countOccurrences(input, Solution::containsAll);
-        final var resultPart2 = countOccurrences(input, Solution::contains);
+        final var resultPart1 = countOccurrences(input, Solution::encloses);
+        final var resultPart2 = countOccurrences(input, Solution::isConnected);
         System.out.println(resultPart1);
         System.out.println(resultPart2);
     }
@@ -26,24 +26,23 @@ public final class Solution {
     private static long countOccurrences(final List<String> input,
                                          final Predicate<Pair<Range<Integer>, Range<Integer>>> filter) {
         return input.stream()
-                .map(PAIR_SPLITTER::splitToStream)
-                .map(pair -> pair.map(RANGE_SPLITTER::splitToStream))
-                .map(pair -> pair.map(range -> range.map(NumberUtils::toInt)))
-                .map(pair -> pair.map(Stream::toList))
-                .map(pair -> pair.map(Range::encloseAll))
+                .map(line -> PAIR_SPLITTER.splitToStream(line)
+                        .map(pair -> RANGE_SPLITTER.splitToStream(pair).map(NumberUtils::toInt))
+                        .map(Stream::toList)
+                        .map(Range::encloseAll))
                 .map(Stream::toList)
                 .map(Pair::fromCollection)
                 .filter(filter)
                 .count();
     }
 
-    private static boolean containsAll(final Pair<Range<Integer>, Range<Integer>> ranges) {
+    private static boolean encloses(final Pair<Range<Integer>, Range<Integer>> ranges) {
         final var range1 = ranges.getValue0();
         final var range2 = ranges.getValue1();
         return range1.encloses(range2) || range2.encloses(range1);
     }
 
-    private static boolean contains(final Pair<Range<Integer>, Range<Integer>> ranges) {
+    private static boolean isConnected(final Pair<Range<Integer>, Range<Integer>> ranges) {
         final var range1 = ranges.getValue0();
         final var range2 = ranges.getValue1();
         return range1.isConnected(range2);
