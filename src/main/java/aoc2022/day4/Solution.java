@@ -5,60 +5,47 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.Range;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 
 import aoc2022.input.InputLoader;
 
 public final class Solution {
-    private static final String PAIR_SEPARATOR = ",";
-    private static final String RANGE_SEPARATOR = "-";
+    private static final Splitter PAIR_SPLITTER = Splitter.on(",");
+    private static final Splitter RANGE_SPLITTER = Splitter.on("-");
 
     public static void main(final String[] args) {
         final var input = InputLoader.readLines("day4");
-        final var resultPart1 = countOccurrences(input, Range::overlapFully);
-        final var resultPart2 = countOccurrences(input, Range::overlapAtAll);
+        final var resultPart1 = countOccurrences(input, Solution::containsAll);
+        final var resultPart2 = countOccurrences(input, Solution::contains);
         System.out.println(resultPart1);
         System.out.println(resultPart2);
     }
 
-    private static long countOccurrences(final List<String> input, final Predicate<Pair<Range, Range>> filter) {
+    private static long countOccurrences(final List<String> input,
+                                         final Predicate<Pair<Range<Integer>, Range<Integer>>> filter) {
         return input.stream()
-                .map(line -> Splitter.on(PAIR_SEPARATOR).splitToStream(line))
-                .map(pair -> pair.map(range -> Splitter.on(RANGE_SEPARATOR).splitToStream(range)))
+                .map(PAIR_SPLITTER::splitToStream)
+                .map(pair -> pair.map(RANGE_SPLITTER::splitToStream))
                 .map(pair -> pair.map(range -> range.map(NumberUtils::toInt)))
                 .map(pair -> pair.map(Stream::toList))
-                .map(pair -> pair.map(Pair::fromCollection))
-                .map(pair -> pair.map(Range::new))
+                .map(pair -> pair.map(Range::encloseAll))
                 .map(Stream::toList)
                 .map(Pair::fromCollection)
                 .filter(filter)
                 .count();
     }
-}
 
-final class Range {
-    private final int start;
-    private final int end;
-
-    public Range(final Pair<Integer, Integer> range) {
-        this.start = range.getValue0();
-        this.end = range.getValue1();
-    }
-
-    public static boolean overlapAtAll(final Pair<Range, Range> ranges) {
+    private static boolean containsAll(final Pair<Range<Integer>, Range<Integer>> ranges) {
         final var range1 = ranges.getValue0();
         final var range2 = ranges.getValue1();
-        return !(range1.end < range2.start || range1.start > range2.end);
+        return range1.encloses(range2) || range2.encloses(range1);
     }
 
-    public static boolean overlapFully(final Pair<Range, Range> ranges) {
+    private static boolean contains(final Pair<Range<Integer>, Range<Integer>> ranges) {
         final var range1 = ranges.getValue0();
         final var range2 = ranges.getValue1();
-        return range1.contains(range2) || range2.contains(range1);
-    }
-
-    private boolean contains(final Range other) {
-        return this.start <= other.start && this.end >= other.end;
+        return range1.isConnected(range2);
     }
 }
