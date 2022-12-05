@@ -1,13 +1,14 @@
 package aoc2022.day2;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@AllArgsConstructor
+@Getter
 enum GameResult {
     WIN(6), DRAW(3), LOSE(0);
 
-    public final int score;
-
-    GameResult(final int score) {
-        this.score = score;
-    }
+    private final int score;
 
     public static GameResult parseResult(final String result) {
         return switch (result) {

@@ -20,6 +20,6 @@ public final class Solution1 {
     }
 
     public static int calculateScore(final Shape opponent, final Shape mine) {
-        return GameStates.getResult(opponent, mine).score + mine.score;
+        return GameStates.getResult(opponent, mine).getScore() + mine.getScore();
     }
 }

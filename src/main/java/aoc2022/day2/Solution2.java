@@ -17,6 +17,6 @@ public final class Solution2 {
         final var opponent = Shape.parseShape(input[0]);
         final var result = GameResult.parseResult(input[1]);
         final var mine = GameStates.getMyShape(opponent, result);
-        return result.score + mine.score;
+        return result.getScore() + mine.getScore();
     }
 }
