@@ -1,6 +1,5 @@
 package aoc2022.day5;
 
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,10 +8,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Splitter;
 import lombok.Getter;
+import one.util.streamex.IntStreamEx;
+import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.math3.linear.MatrixUtils;
 
 import aoc2022.input.InputLoader;
 
@@ -20,8 +19,7 @@ public final class Solution {
 
     public static void main(final String[] args) {
         final var input = InputLoader.read("day5");
-        final var splitInput = Splitter.on(System.lineSeparator() + System.lineSeparator())
-                .splitToStream(input)
+        final var splitInput = StreamEx.split(input, System.lineSeparator() + System.lineSeparator())
                 .collect(Collectors.toCollection(LinkedList::new));
         final var stack1 = new Stack(splitInput.getFirst());
         final var stack2 = new Stack(splitInput.getFirst());
@@ -46,14 +44,11 @@ public final class Solution {
 class Stack {
     private final List<? extends Deque<Character>> stack;
 
-    Stack(final String stackInput) {
-        final var inputArray = stackInput.lines()
-                .map(line -> line.chars().mapToDouble(Double::valueOf).toArray())
-                .toArray(double[][]::new);
-        final var stackArray = MatrixUtils.createRealMatrix(inputArray).transpose().getData();
-        stack = Arrays.stream(stackArray)
-                .map(column -> Arrays.stream(column)
-                        .mapToObj(crate -> (char) crate)
+    Stack(final String input) {
+        final var inputMatrix = input.lines().map(row -> row.chars().mapToObj(crate -> (char) crate).toList()).toList();
+        stack = IntStreamEx.range(inputMatrix.listIterator().next().size())
+                .mapToObj(i -> inputMatrix.stream()
+                        .map(row -> row.get(i))
                         .filter(Character::isAlphabetic)
                         .collect(Collectors.toCollection(LinkedList::new)))
                 .filter(column -> !column.isEmpty())
@@ -71,7 +66,7 @@ class Stack {
     }
 
     String getTopCrates() {
-        return stack.stream().map(Deque::peekFirst).map(String::valueOf).collect(Collectors.joining());
+        return StreamEx.of(stack).map(Deque::peekFirst).map(String::valueOf).joining();
     }
 }
 
