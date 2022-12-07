@@ -2,6 +2,7 @@ package aoc2022.day7;
 
 import java.util.*;
 
+import com.google.common.base.Splitter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -14,24 +15,22 @@ public final class Solution {
 
     public static void main(final String[] args) {
         final var input = InputLoader.readLines("day7", "input");
-        final var mutableInput = new ArrayList<>(input);
-        mutableInput.remove(0);
-        final var rootDir = new Directory("", null);
         final var fileTree = new LinkedHashMap<String, Directory>();
+        final var rootDir = new Directory("/", null);
         fileTree.put(rootDir.getName(), rootDir);
         var currentDir = rootDir;
-        for (final var line : mutableInput) {
-            final var lineSplit = List.of(line.split(" "));
-            if (lineSplit.get(0).equals("$")) {
-                if (lineSplit.get(1).equals("cd")) {
-                    final var dirName = lineSplit.get(2);
+        for (final var command : input) {
+            final var commandParameters = Splitter.on(' ').splitToList(command);
+            if (commandParameters.get(0).equals("$")) {
+                if (commandParameters.get(1).equals("cd")) {
+                    final var dirName = commandParameters.get(2);
                     if (!dirName.equals("..")) {
                         final var newDir = new Directory(dirName, currentDir);
                         if (fileTree.containsKey(newDir.getFullPath())) {
                             currentDir = fileTree.get(newDir.getFullPath());
                         } else {
                             fileTree.put(newDir.getFullPath(), newDir);
-                            currentDir.add(newDir);
+                            currentDir.addSubDirectory(newDir);
                             currentDir = newDir;
                         }
                     } else {
@@ -39,9 +38,8 @@ public final class Solution {
                     }
                 }
             } else {
-                if (NumberUtils.isParsable(lineSplit.get(0))) {
-                    final var file = new File(NumberUtils.toInt(lineSplit.get(0)), lineSplit.get(1));
-                    currentDir.add(file);
+                if (NumberUtils.isParsable(commandParameters.get(0))) {
+                    currentDir.addFile(NumberUtils.toInt(commandParameters.get(0)));
                 }
             }
         }
@@ -62,31 +60,22 @@ public final class Solution {
 class Directory {
     private final String name;
     private final Directory parent;
-    private final Set<Directory> subDirs = new HashSet<>();
-    private final Set<File> files = new HashSet<>();
+    private final List<Directory> subDirectories = new ArrayList<>();
+    private int directSize = 0;
 
     public String getFullPath() {
-        if (parent != null) {
-            return parent.getFullPath() + name + "/";
-        } else {
-            return name;
-        }
+        return parent == null ? name : parent.getFullPath() + name + "/";
     }
 
     public int getFullSize() {
-        final var fileSize = !files.isEmpty() ? files.stream().mapToInt(File::size).sum() : 0;
-        final var subDirsSize = !subDirs.isEmpty() ? subDirs.stream().mapToInt(Directory::getFullSize).sum() : 0;
-        return fileSize + subDirsSize;
+        return directSize + subDirectories.stream().mapToInt(Directory::getFullSize).sum();
     }
 
-    public void add(Directory directory) {
-        subDirs.add(directory);
+    public void addSubDirectory(final Directory directory) {
+        subDirectories.add(directory);
     }
 
-    public void add(final File file) {
-        files.add(file);
+    public void addFile(final int size) {
+        directSize += size;
     }
-}
-
-record File(int size, String name) {
 }
