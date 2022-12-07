@@ -17,11 +17,11 @@ public final class Solution {
 
     public static void main(final String[] args) {
         final var input = Lists.newLinkedList(InputLoader.readLines("day7"));
-        final var rootDirectory = traverseFileSystem(input);
-        final var result1 = treeToDataStream(rootDirectory).filter(size -> size <= MAX_DIRECTORY_SIZE).sum();
+        final var root = traverseFileSystem(input);
+        final var result1 = fullTreeDataStream(root).filter(size -> size <= MAX_DIRECTORY_SIZE).sum();
         System.out.println(result1);
-        final var missingMemory = REQUIRED_MEMORY - (TOTAL_MEMORY - fullTreeNodeSize(rootDirectory));
-        final var result2 = treeToDataStream(rootDirectory).filter(size -> size > missingMemory).min().orElseThrow();
+        final var missingMemory = REQUIRED_MEMORY - (TOTAL_MEMORY - root.data());
+        final var result2 = fullTreeDataStream(root).filter(size -> size > missingMemory).min().orElseThrow();
         System.out.println(result2);
     }
 
@@ -34,14 +34,11 @@ public final class Solution {
                 node.setData(node.data() + NumberUtils.toInt(command.replaceAll("\\D+", "")));
             }
         }
+        node.setData(node.data() + node.subtrees().stream().mapToInt(TreeNode::data).sum());
         return node;
     }
 
-    private static IntStream treeToDataStream(final TreeNode<Integer> node) {
-        return node.preOrdered().stream().mapToInt(Solution::fullTreeNodeSize);
-    }
-
-    private static int fullTreeNodeSize(final TreeNode<Integer> node) {
-        return node.preOrdered().stream().mapToInt(TreeNode::data).sum();
+    private static IntStream fullTreeDataStream(final TreeNode<Integer> node) {
+        return node.preOrdered().stream().mapToInt(TreeNode::data);
     }
 }
