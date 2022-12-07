@@ -1,11 +1,11 @@
 package aoc2022.day7;
 
 import java.util.LinkedList;
-import java.util.List;
+import java.util.stream.IntStream;
 
 import com.google.common.collect.Lists;
-import one.util.streamex.IntStreamEx;
-import one.util.streamex.StreamEx;
+import com.scalified.tree.TreeNode;
+import com.scalified.tree.multinode.ArrayMultiTreeNode;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import aoc2022.input.InputLoader;
@@ -16,49 +16,32 @@ public final class Solution {
     private static final int REQUIRED_MEMORY = 30_000_000;
 
     public static void main(final String[] args) {
-        final var input = InputLoader.readLines("day7").stream().skip(1).toList();
-        final var rootDirectory = traverseFileSystem(Lists.newLinkedList(input));
-        final var result1 = rootDirectory.flatSizesStream().filter(size -> size <= MAX_DIRECTORY_SIZE).sum();
+        final var input = Lists.newLinkedList(InputLoader.readLines("day7"));
+        final var rootDirectory = traverseFileSystem(input);
+        final var result1 = treeToDataStream(rootDirectory).filter(size -> size <= MAX_DIRECTORY_SIZE).sum();
         System.out.println(result1);
-        final var missingMemory = REQUIRED_MEMORY - (TOTAL_MEMORY - rootDirectory.getFullSize());
-        final var result2 = rootDirectory.flatSizesStream().filter(size -> size > missingMemory).min().orElseThrow();
+        final var missingMemory = REQUIRED_MEMORY - (TOTAL_MEMORY - fullTreeNodeSize(rootDirectory));
+        final var result2 = treeToDataStream(rootDirectory).filter(size -> size > missingMemory).min().orElseThrow();
         System.out.println(result2);
     }
 
-    private static Directory traverseFileSystem(final LinkedList<String> commands) {
-        final var directory = new Directory();
+    private static TreeNode<Integer> traverseFileSystem(final LinkedList<String> commands) {
+        final var node = new ArrayMultiTreeNode<>(0);
         for (var command = ""; command != null && !command.contains("$ cd .."); command = commands.pollFirst()) {
             if (command.contains("$ cd")) {
-                directory.addSubDirectory(traverseFileSystem(commands));
+                node.add(traverseFileSystem(commands));
             } else {
-                directory.addFile(NumberUtils.toInt(command.replaceAll("\\D+", "")));
+                node.setData(node.data() + NumberUtils.toInt(command.replaceAll("\\D+", "")));
             }
         }
-        return directory;
-    }
-}
-
-final class Directory {
-    private final List<Directory> subDirectories = Lists.newArrayList();
-    private int directSize = 0;
-
-    void addSubDirectory(final Directory directory) {
-        subDirectories.add(directory);
+        return node;
     }
 
-    void addFile(final int size) {
-        directSize += size;
+    private static IntStream treeToDataStream(final TreeNode<Integer> node) {
+        return node.preOrdered().stream().mapToInt(Solution::fullTreeNodeSize);
     }
 
-    int getFullSize() {
-        return directSize + subDirectories.stream().mapToInt(Directory::getFullSize).sum();
-    }
-
-    IntStreamEx flatSizesStream() {
-        return StreamEx.of(subDirectories)
-                .map(Directory::flatSizesStream)
-                .flatMap(IntStreamEx::boxed)
-                .append(getFullSize())
-                .mapToInt(Integer::valueOf);
+    private static int fullTreeNodeSize(final TreeNode<Integer> node) {
+        return node.preOrdered().stream().mapToInt(TreeNode::data).sum();
     }
 }
