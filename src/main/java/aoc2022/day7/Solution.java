@@ -18,47 +18,57 @@ public final class Solution {
 
     public static void main(final String[] args) {
         final var input = InputLoader.readLines("day7").stream().skip(1).toList();
-        final var rootDirectory = new Directory(null);
-        var currentDirectory = rootDirectory;
-        for (final var command : input) {
-            if (command.contains("$ cd ..")) {
-                currentDirectory = currentDirectory.getParent();
-            } else if (command.contains("$ cd")) {
-                final var directory = new Directory(currentDirectory);
-                currentDirectory.addSubDirectory(directory);
-                currentDirectory = directory;
-            } else {
-                currentDirectory.addFile(NumberUtils.toInt(command.replaceAll("\\D+", "")));
-            }
-        }
+        final var rootDirectory = traverseFileSystemAndReturnRoot(input);
         final var result1 = rootDirectory.flatSizesStream().filter(size -> size <= MAX_DIR_SIZE).sum();
         System.out.println(result1);
         final var missingMemory = REQUIRED_MEMORY - (TOTAL_MEMORY - rootDirectory.getFullSize());
         final var result2 = rootDirectory.flatSizesStream().filter(size -> size > missingMemory).min().orElseThrow();
         System.out.println(result2);
     }
+
+    private static Directory traverseFileSystemAndReturnRoot(final List<String> commands) {
+        final var rootDirectory = new Directory(null);
+        var currentDirectory = rootDirectory;
+        for (final var command : commands) {
+            currentDirectory = handleCommand(command, currentDirectory);
+        }
+        return rootDirectory;
+    }
+
+    private static Directory handleCommand(final String command, final Directory currentDirectory) {
+        if (command.contains("$ cd ..")) {
+            return currentDirectory.getParent();
+        } else if (command.contains("$ cd")) {
+            final var directory = new Directory(currentDirectory);
+            currentDirectory.addSubDirectory(directory);
+            return directory;
+        } else {
+            currentDirectory.addFile(NumberUtils.toInt(command.replaceAll("\\D+", "")));
+            return currentDirectory;
+        }
+    }
 }
 
-@Getter
 @RequiredArgsConstructor
-class Directory {
+final class Directory {
+    @Getter
     private final Directory parent;
     private final List<Directory> subDirectories = new ArrayList<>();
     private int directSize = 0;
 
-    public int getFullSize() {
+    int getFullSize() {
         return directSize + subDirectories.stream().mapToInt(Directory::getFullSize).sum();
     }
 
-    public void addSubDirectory(final Directory directory) {
+    void addSubDirectory(final Directory directory) {
         subDirectories.add(directory);
     }
 
-    public void addFile(final int size) {
+    void addFile(final int size) {
         directSize += size;
     }
 
-    public IntStreamEx flatSizesStream() {
+    IntStreamEx flatSizesStream() {
         return StreamEx.of(subDirectories)
                 .map(Directory::flatSizesStream)
                 .flatMap(IntStreamEx::boxed)
