@@ -1,28 +1,25 @@
 package aoc2022.day8;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Chars;
 import lombok.RequiredArgsConstructor;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
+import org.paukov.combinatorics3.Generator;
 
 import aoc2022.input.InputLoader;
 
 public final class Solution {
     public static void main(final String[] args) {
         final var grid = InputLoader.readLines("day8").stream().map(String::toCharArray).map(Chars::asList).toList();
-        final var trees = IntStreamEx.range(grid.size()).flatMapToObj(row -> prepareTreesRow(grid, row)).toList();
+        final var trees = Generator.permutation(IntStreamEx.range(grid.size()).boxed().toList()).withRepetitions(2)
+                .stream().map(point -> prepareTree(grid, point.get(0), point.get(1))).toList();
         final var visibleTrees = trees.stream().filter(Tree::isVisible).count();
         System.out.println(visibleTrees);
         final var maxScenicScore = trees.stream().mapToLong(Tree::scenicScore).max().orElseThrow();
         System.out.println(maxScenicScore);
-    }
-
-    private static Stream<Tree> prepareTreesRow(final List<List<Character>> grid, final int row) {
-        return IntStreamEx.range(grid.get(row).size()).mapToObj(column -> prepareTree(grid, row, column));
     }
 
     private static Tree prepareTree(final List<List<Character>> grid, final int row, final int column) {
