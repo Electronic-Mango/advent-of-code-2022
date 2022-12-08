@@ -24,7 +24,7 @@ public final class Solution {
 
     private static Tree prepareTree(final List<List<Character>> grid, final int row, final int column) {
         final var left = Lists.reverse(grid.get(row).subList(0, column));
-        final var right = grid.get(row).subList(column + 1, grid.size());
+        final var right = grid.get(row).subList(column + 1, grid.get(row).size());
         final var up = Lists.reverse(IntStreamEx.range(row).mapToObj(i -> grid.get(i).get(column)).toList());
         final var down = IntStreamEx.range(row + 1, grid.size()).mapToObj(i -> grid.get(i).get(column)).toList();
         return new Tree(grid.get(row).get(column), List.of(left, right, up, down));
