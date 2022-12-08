@@ -1,99 +1,52 @@
 package aoc2022.day8;
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
-import lombok.Getter;
-import org.apache.commons.lang3.BooleanUtils;
+import com.google.common.collect.Lists;
+import com.google.common.primitives.Chars;
+import lombok.RequiredArgsConstructor;
+import one.util.streamex.IntStreamEx;
+import one.util.streamex.StreamEx;
 
 import aoc2022.input.InputLoader;
 
 public final class Solution {
     public static void main(final String[] args) {
-        final var treeHeightGrid = InputLoader.readLines("day8").stream()
-                .map(line -> line.chars().mapToObj(Character::toString).map(Integer::parseInt).toList())
-                .toList();
-        final var trees = new ArrayList<Tree>();
-        final var rowLength = treeHeightGrid.size();
-        final var columnLength = treeHeightGrid.get(0).size();
-        for (int row = 1; row < rowLength - 1; ++row) {
-            for (int column = 1; column < columnLength - 1; ++column) {
-                final var tree = new Tree(row, column, treeHeightGrid.get(column).get(row));
-                trees.add(tree);
-                checkTreeParameters(tree, treeHeightGrid, rowLength, columnLength);
-            }
-        }
-        var visibleOutsideTrees = (rowLength * 2) + ((columnLength - 2) * 2);
-        final var visibleTrees = visibleOutsideTrees + trees.stream()
-                .map(Tree::isVisible)
-                .filter(BooleanUtils::isTrue)
-                .count();
-        final var maxScenicScore = trees.stream().mapToInt(Tree::getScenicScore).max().orElseThrow();
+        final var grid = InputLoader.readLines("day8").stream().map(String::toCharArray).map(Chars::asList).toList();
+        final var trees = IntStreamEx.range(grid.size()).flatMapToObj(row -> prepareTreesRow(grid, row)).toList();
+        final var visibleTrees = trees.stream().filter(Tree::isVisible).count();
         System.out.println(visibleTrees);
+        final var maxScenicScore = trees.stream().mapToLong(Tree::scenicScore).max().orElseThrow();
         System.out.println(maxScenicScore);
     }
 
-    private static void checkTreeParameters(final Tree tree,
-                                            final List<List<Integer>> treeHeightGrid,
-                                            final int rowLength,
-                                            final int columnLength) {
-        var visibleTop = true;
-        var scenicScoreTop = 0;
-        for (int row = tree.x - 1; row >= 0; --row) {
-            scenicScoreTop++;
-            final var otherTree = new Tree(row, tree.y, treeHeightGrid.get(tree.y).get(row));
-            if (otherTree.height >= tree.height) {
-                visibleTop = false;
-                break;
-            }
-        }
-        var visibleBottom = true;
-        var scenicScoreBottom = 0;
-        for (int row = tree.x + 1; row < columnLength; ++row) {
-            scenicScoreBottom++;
-            final var otherTree = new Tree(row, tree.y, treeHeightGrid.get(tree.y).get(row));
-            if (otherTree.height >= tree.height) {
-                visibleBottom = false;
-                break;
-            }
-        }
-        var visibleRight = true;
-        var scenicScoreLeft = 0;
-        for (int column = tree.y - 1; column >= 0; --column) {
-            scenicScoreLeft++;
-            final var otherTree = new Tree(tree.x, column, treeHeightGrid.get(column).get(tree.x));
-            if (otherTree.height >= tree.height) {
-                visibleRight = false;
-                break;
-            }
-        }
-        var visibleLeft = true;
-        var scenicScoreRight = 0;
-        for (int column = tree.y + 1; column < rowLength; ++column) {
-            scenicScoreRight++;
-            final var otherTree = new Tree(tree.x, column, treeHeightGrid.get(column).get(tree.x));
-            if (otherTree.height >= tree.height) {
-                visibleLeft = false;
-                break;
-            }
-        }
-        tree.visible = visibleLeft || visibleBottom || visibleRight || visibleTop;
-        tree.scenicScore = scenicScoreTop * scenicScoreRight * scenicScoreBottom * scenicScoreLeft;
+    private static Stream<Tree> prepareTreesRow(final List<List<Character>> grid, final int row) {
+        return IntStreamEx.range(grid.get(row).size()).mapToObj(column -> prepareTree(grid, row, column));
+    }
+
+    private static Tree prepareTree(final List<List<Character>> grid, final int row, final int column) {
+        final var left = Lists.reverse(grid.get(row).subList(0, column));
+        final var right = grid.get(row).subList(column + 1, grid.size());
+        final var up = Lists.reverse(IntStreamEx.range(row).mapToObj(i -> grid.get(i).get(column)).toList());
+        final var down = IntStreamEx.range(row + 1, grid.size()).mapToObj(i -> grid.get(i).get(column)).toList();
+        return new Tree(grid.get(row).get(column), List.of(left, right, up, down));
     }
 }
 
-@Getter
-final class Tree extends Point {
-    final int height;
-    boolean visible;
-    int scenicScore;
+@RequiredArgsConstructor
+final class Tree {
+    private final char height;
+    private final List<List<Character>> sides;
 
+    boolean isVisible() {
+        return sides.stream().anyMatch(side -> side.stream().allMatch(other -> other < height));
+    }
 
-    Tree(final int x, final int y, final int height) {
-        super(x, y);
-        this.height = height;
-        this.visible = true;
-        this.scenicScore = 0;
+    long scenicScore() {
+        return sides.stream()
+                .mapToLong(side -> StreamEx.of(side).takeWhileInclusive(other -> other < height).count())
+                .reduce(Math::multiplyExact)
+                .orElseThrow();
     }
 }
