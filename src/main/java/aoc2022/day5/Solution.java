@@ -9,14 +9,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
-import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.electronicmango.zipper.Zipper;
 
 import aoc2022.input.InputLoader;
 
 public final class Solution {
-
     public static void main(final String[] args) {
         final var input = InputLoader.read("day5");
         final var splitInput = StreamEx.split(input, System.lineSeparator() + System.lineSeparator())
@@ -45,10 +44,11 @@ class Stack {
     private final List<? extends Deque<Character>> stack;
 
     Stack(final String input) {
-        final var inputMatrix = input.lines().map(row -> row.chars().mapToObj(crate -> (char) crate).toList()).toList();
-        stack = IntStreamEx.range(inputMatrix.listIterator().next().size())
-                .mapToObj(i -> inputMatrix.stream()
-                        .map(row -> row.get(i))
+        stack = input.lines()
+                .map(row -> row.chars().mapToObj(crate -> (char) crate).toList())
+                .collect(Zipper.zipCollector())
+                .stream()
+                .map(column -> column.stream()
                         .filter(Character::isAlphabetic)
                         .collect(Collectors.toCollection(LinkedList::new)))
                 .filter(column -> !column.isEmpty())
