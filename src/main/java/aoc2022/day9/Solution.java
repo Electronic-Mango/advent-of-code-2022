@@ -43,14 +43,8 @@ public final class Solution {
     }
 
     private static void moveKnotToTarget(final Point target, final Point knot) {
-        if (target.distance(knot) < 2) {
-            return;
-        }
-        if (target.x != knot.x) {
-            knot.x += target.x > knot.x ? 1 : -1;
-        }
-        if (target.y != knot.y) {
-            knot.y += target.y > knot.y ? 1 : -1;
+        if (target.distance(knot) >= 2) {
+            knot.translate(Integer.compare(target.x, knot.x), Integer.compare(target.y, knot.y));
         }
     }
 }
