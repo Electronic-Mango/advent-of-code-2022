@@ -21,11 +21,11 @@ public final class Solution {
         moveRope(movements, 10);
     }
 
-    private static void moveRope(final List<Character> moves, final int numberOfKnots) {
+    private static void moveRope(final List<Character> directions, final int numberOfKnots) {
         final var knots = StreamEx.generate(Point::new).limit(numberOfKnots)
                 .collect(Collectors.toCollection(ArrayDeque::new));
         final var tailPositions = Sets.newHashSet(knots.getLast().clone());
-        for (final var direction : moves) {
+        for (final var direction : directions) {
             moveHead(knots.getFirst(), direction);
             StreamEx.of(knots).forPairs(Solution::moveKnotToTarget);
             tailPositions.add(knots.getLast().clone());
@@ -33,12 +33,12 @@ public final class Solution {
         System.out.println(tailPositions.size());
     }
 
-    private static void moveHead(final Point point, final char direction) {
+    private static void moveHead(final Point head, final char direction) {
         switch (direction) {
-            case 'R' -> point.x += 1;
-            case 'L' -> point.x += -1;
-            case 'U' -> point.y += 1;
-            case 'D' -> point.y += -1;
+            case 'R' -> head.x += 1;
+            case 'L' -> head.x += -1;
+            case 'U' -> head.y += 1;
+            case 'D' -> head.y += -1;
         }
     }
 
