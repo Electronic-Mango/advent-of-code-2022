@@ -1,14 +1,13 @@
 package aoc2022.day10;
 
-import java.util.LinkedList;
-
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import one.util.streamex.EntryStream;
 import one.util.streamex.IntStreamEx;
 import org.apache.commons.lang3.StringUtils;
 
-import aoc2022.input.InputLoader;
+import java.util.LinkedList;
 
 public final class Solution {
     public static void main(final String[] args) {

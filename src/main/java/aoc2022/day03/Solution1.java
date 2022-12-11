@@ -1,12 +1,11 @@
-package aoc2022.day3;
+package aoc2022.day03;
 
+import aoc2022.input.InputLoader;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.primitives.Chars;
 import one.util.streamex.MoreCollectors;
-
-import aoc2022.input.InputLoader;
 
 public final class Solution1 {
     public static void main(final String[] args) {

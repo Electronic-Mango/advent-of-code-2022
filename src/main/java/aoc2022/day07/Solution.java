@@ -1,14 +1,13 @@
-package aoc2022.day7;
+package aoc2022.day07;
 
-import java.util.LinkedList;
-import java.util.stream.IntStream;
-
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Lists;
 import com.scalified.tree.TreeNode;
 import com.scalified.tree.multinode.ArrayMultiTreeNode;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import aoc2022.input.InputLoader;
+import java.util.LinkedList;
+import java.util.stream.IntStream;
 
 public final class Solution {
     private static final int MAX_DIRECTORY_SIZE = 100_000;

@@ -1,4 +1,4 @@
-package aoc2022.day2;
+package aoc2022.day02;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

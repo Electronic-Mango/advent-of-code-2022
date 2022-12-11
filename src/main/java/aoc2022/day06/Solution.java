@@ -1,11 +1,10 @@
-package aoc2022.day6;
+package aoc2022.day06;
+
+import aoc2022.input.InputLoader;
+import one.util.streamex.StreamEx;
 
 import java.util.List;
 import java.util.Set;
-
-import one.util.streamex.StreamEx;
-
-import aoc2022.input.InputLoader;
 
 public final class Solution {
     private static final int START_OF_PACKET_SIZE_1 = 4;

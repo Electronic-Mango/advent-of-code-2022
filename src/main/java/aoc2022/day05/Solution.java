@@ -1,4 +1,10 @@
-package aoc2022.day5;
+package aoc2022.day05;
+
+import aoc2022.input.InputLoader;
+import lombok.Getter;
+import one.util.streamex.StreamEx;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.electronicmango.zipper.Zipper;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -7,13 +13,6 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import lombok.Getter;
-import one.util.streamex.StreamEx;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.electronicmango.zipper.Zipper;
-
-import aoc2022.input.InputLoader;
 
 public final class Solution {
     public static void main(final String[] args) {

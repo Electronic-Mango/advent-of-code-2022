@@ -1,7 +1,6 @@
-package aoc2022.day8;
+package aoc2022.day08;
 
-import java.util.List;
-
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Chars;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +9,7 @@ import one.util.streamex.StreamEx;
 import org.electronicmango.zipper.Zipper;
 import org.paukov.combinatorics3.Generator;
 
-import aoc2022.input.InputLoader;
+import java.util.List;
 
 public final class Solution {
     public static void main(final String[] args) {

@@ -1,8 +1,8 @@
 package aoc2022.input;
 
-import java.util.List;
-
 import resource.ResourceLoader;
+
+import java.util.List;
 
 public final class InputLoader {
     private static final String INPUT_FILE_PATTERN = "inputs/%s/%s";

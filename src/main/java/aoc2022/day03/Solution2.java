@@ -1,13 +1,12 @@
-package aoc2022.day3;
+package aoc2022.day03;
 
-import java.util.Collection;
-
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Chars;
 import one.util.streamex.MoreCollectors;
 
-import aoc2022.input.InputLoader;
+import java.util.Collection;
 
 public final class Solution2 {
     private static final int GROUP_SIZE = 3;

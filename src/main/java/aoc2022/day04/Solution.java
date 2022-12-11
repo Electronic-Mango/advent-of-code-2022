@@ -1,20 +1,18 @@
-package aoc2022.day4;
+package aoc2022.day04;
 
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.stream.Stream;
-
-import com.google.common.base.Splitter;
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Range;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import aoc2022.input.InputLoader;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public final class Solution {
-    private static final Splitter PAIR_SPLITTER = Splitter.on(",");
-    private static final Splitter RANGE_SPLITTER = Splitter.on("-");
+    private static final String PAIR_SEPARATOR = ",";
+    private static final String RANGE_SEPARATOR = "-";
 
     public static void main(final String[] args) {
         final var input = InputLoader.readLines("day4");
@@ -27,8 +25,8 @@ public final class Solution {
     private static long countOccurrences(final List<String> input,
                                          final BiFunction<Range<Integer>, Range<Integer>, Boolean> mapper) {
         return input.stream()
-                .map(line -> PAIR_SPLITTER.splitToStream(line)
-                        .map(pair -> RANGE_SPLITTER.splitToStream(pair).map(NumberUtils::toInt))
+                .map(line -> StreamEx.split(line, PAIR_SEPARATOR)
+                        .map(pair -> StreamEx.split(pair, RANGE_SEPARATOR).map(NumberUtils::toInt))
                         .map(Stream::toList)
                         .map(Range::encloseAll))
                 .map(Stream::toList)

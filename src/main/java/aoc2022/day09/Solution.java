@@ -1,16 +1,15 @@
-package aoc2022.day9;
+package aoc2022.day09;
 
-import java.awt.Point;
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.stream.Collectors;
-
+import aoc2022.input.InputLoader;
 import com.google.common.collect.Sets;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import aoc2022.input.InputLoader;
+import java.awt.*;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public final class Solution {
     public static void main(final String[] args) {
@@ -36,9 +35,9 @@ public final class Solution {
     private static void moveHead(final Point head, final char direction) {
         switch (direction) {
             case 'R' -> head.x += 1;
-            case 'L' -> head.x += -1;
+            case 'L' -> head.x -= 1;
             case 'U' -> head.y += 1;
-            case 'D' -> head.y += -1;
+            case 'D' -> head.y -= 1;
         }
     }
 
