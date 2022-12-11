@@ -1,6 +1,7 @@
 package aoc2022.day11;
 
 import aoc2022.input.InputLoader;
+import lombok.AccessLevel;
 import lombok.Getter;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
@@ -45,7 +46,7 @@ final class Monkey {
     private final long testDivisor;
     private final int targetTrue;
     private final int targetFalse;
-    @Getter
+    @Getter(AccessLevel.PACKAGE)
     private long inspectedTimes = 0;
 
     public Monkey(final List<Long> items,

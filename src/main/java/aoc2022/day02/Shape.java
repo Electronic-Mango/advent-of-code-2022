@@ -1,10 +1,11 @@
 package aoc2022.day02;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
-@Getter
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@Getter(AccessLevel.PACKAGE)
 enum Shape {
     ROCK(1),
     PAPER(2),

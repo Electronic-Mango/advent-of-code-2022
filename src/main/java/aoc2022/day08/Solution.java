@@ -3,6 +3,7 @@ package aoc2022.day08;
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Chars;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
@@ -31,7 +32,7 @@ public final class Solution {
     }
 }
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 final class Tree {
     private final char height;
     private final List<List<Character>> sides;

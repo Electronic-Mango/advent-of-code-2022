@@ -1,10 +1,11 @@
 package aoc2022.day02;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@AllArgsConstructor
-@Getter
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@Getter(AccessLevel.PACKAGE)
 enum GameResult {
     WIN(6), DRAW(3), LOSE(0);
 

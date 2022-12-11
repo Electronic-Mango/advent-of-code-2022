@@ -1,6 +1,7 @@
 package aoc2022.day05;
 
 import aoc2022.input.InputLoader;
+import lombok.AccessLevel;
 import lombok.Getter;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -69,7 +70,7 @@ class Stack {
     }
 }
 
-@Getter
+@Getter(AccessLevel.PACKAGE)
 class Operation {
     private final int count;
     private final int source;
