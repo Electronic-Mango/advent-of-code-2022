@@ -6,6 +6,7 @@ import one.util.streamex.StreamEx;
 
 import java.awt.Point;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,7 +39,6 @@ public final class Solution {
                 .filterValues(LOWEST_HEIGHT::equals)
                 .keys()
                 .mapToInt(start -> solve(heightMap, start, endPoint))
-                .peek(System.out::println)
                 .min()
                 .orElseThrow();
         System.out.println(result2);
@@ -46,21 +46,26 @@ public final class Solution {
 
     private static int solve(final Map<Point, Integer> heightMap, final Point start, final Point end) {
         final var visitedPoints = new HashMap<>(Map.of(start, 0, end, Integer.MAX_VALUE));
-        final var nextPoints = new HashMap<Point, Integer>();
+        final var handledPoints = new HashSet<Point>();
+        int handledPointsSizeStart;
         do {
-            nextPoints.clear();
-            for (final var point : StreamEx.of(visitedPoints.keySet()).filterBy(end::equals, false).toList()) {
+            handledPointsSizeStart = handledPoints.size();
+            final var pointsToHandle = StreamEx.of(visitedPoints.keySet())
+                    .filterBy(end::equals, false)
+                    .filterBy(handledPoints::contains, false)
+                    .toList();
+            for (final var point : pointsToHandle) {
+                handledPoints.add(point);
                 final var height = heightMap.get(point) + 1;
                 final var steps = visitedPoints.get(point) + 1;
-                Stream.of(new Point(-1, 0), new Point(1, 0), new Point(0, -1), new Point(0, 1))
+                StreamEx.of(new Point(-1, 0), new Point(1, 0), new Point(0, -1), new Point(0, 1))
                         .map(delta -> new Point(point.x - delta.x, point.y - delta.y))
                         .filter(heightMap::containsKey)
                         .filter(next -> heightMap.get(next) <= height)
                         .filter(next -> visitedPoints.get(next) == null || visitedPoints.get(next) > steps)
-                        .forEach(next -> nextPoints.put(next, steps));
+                        .forEach(next -> visitedPoints.put(next, steps));
             }
-            visitedPoints.putAll(nextPoints);
-        } while (visitedPoints.get(end) == Integer.MAX_VALUE && !nextPoints.isEmpty());
+        } while (visitedPoints.get(end) == Integer.MAX_VALUE && handledPoints.size() > handledPointsSizeStart);
         return visitedPoints.get(end);
     }
 }
