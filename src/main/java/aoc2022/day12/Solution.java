@@ -1,15 +1,20 @@
 package aoc2022.day12;
 
 import aoc2022.input.InputLoader;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import one.util.streamex.EntryStream;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.awt.Point;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -35,13 +40,13 @@ public final class Solution {
 
         final var distances = getDistances(heightMap, end);
         final var result1 = distances.get(start);
+        System.out.println(result1);
         final var result2 = EntryStream.of(distances)
                 .filterKeys(point -> heightMap.get(point).equals(LOWEST_HEIGHT))
                 .values()
                 .mapToInt(Integer::valueOf)
                 .min()
                 .orElseThrow();
-        System.out.println(result1);
         System.out.println(result2);
     }
 
@@ -50,23 +55,30 @@ public final class Solution {
     }
 
     private static Map<Point, Integer> getDistances(final Map<Point, Integer> heightMap, final Point start) {
-        final var distances = new HashMap<Point, Integer>();
-        final var pointsToHandle = new LinkedList<Pair<Point, Integer>>();
-        pointsToHandle.add(Pair.of(start, 0));
-        while (!pointsToHandle.isEmpty()) {
-            final var state = pointsToHandle.pollFirst();
-            final var nextSteps = state.getRight() + 1;
-            final var position = state.getLeft();
-            StreamEx.of(Pair.of(-1, 0), Pair.of(1, 0), Pair.of(0, -1), Pair.of(0, 1))
-                    .map(delta -> new Point(position.x - delta.getLeft(), position.y - delta.getRight()))
+        final var pointsToHandle = new LinkedHashSet<State>();
+        pointsToHandle.add(new State(start, 0));
+        while (pointsToHandle.stream().anyMatch(State::isOpen)) {
+            final var state = pointsToHandle.stream().filter(State::isOpen).findFirst().orElseThrow();
+            final var position = state.getPosition();
+            Stream.of(Pair.of(-1, 0), Pair.of(1, 0), Pair.of(0, -1), Pair.of(0, 1))
+                    .map(delta -> new Point(position.x + delta.getLeft(), position.y + delta.getRight()))
                     .filter(heightMap::containsKey)
-                    .filterBy(distances::containsKey, false)
                     .filter(point -> heightMap.get(point) + 1 >= heightMap.get(position))
-                    .forEach(point -> {
-                        pointsToHandle.addLast(Pair.of(point, nextSteps));
-                        distances.put(point, nextSteps);
-                    });
+                    .map(point -> new State(point, state.getSteps() + 1))
+                    .forEach(pointsToHandle::add);
+            state.setOpen(false);
         }
-        return distances;
+        return pointsToHandle.stream().collect(Collectors.toMap(State::getPosition, State::getSteps));
+    }
+
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @Getter(AccessLevel.PRIVATE)
+    @Setter(AccessLevel.PRIVATE)
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    private static final class State {
+        @EqualsAndHashCode.Include
+        private final Point position;
+        private final int steps;
+        private boolean open = true;
     }
 }
