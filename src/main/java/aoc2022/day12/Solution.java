@@ -2,6 +2,7 @@ package aoc2022.day12;
 
 import aoc2022.input.InputLoader;
 import one.util.streamex.EntryStream;
+import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 
 import java.awt.Point;
@@ -23,9 +24,8 @@ public final class Solution {
                 .mapValues(String::chars)
                 .mapValues(IntStream::boxed)
                 .mapValues(Stream::toList)
-                .flatMapValues(EntryStream::of)
-                .mapToKey((y, xHeightEntry) -> new Point(xHeightEntry.getKey(), y))
-                .mapValues(Map.Entry::getValue)
+                .flatMapToKey((y, row) -> IntStreamEx.range(row.size()).mapToObj(x -> new Point(x, y)))
+                .mapToValue((point, row) -> row.get(point.x))
                 .toMap();
         final var startPoint = EntryStream.of(heightMap).filterValues(START::equals).keys().findAny().orElseThrow();
         final var endPoint = EntryStream.of(heightMap).filterValues(END::equals).keys().findAny().orElseThrow();
