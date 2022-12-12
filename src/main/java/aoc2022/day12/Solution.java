@@ -1,7 +1,6 @@
 package aoc2022.day12;
 
 import aoc2022.input.InputLoader;
-import com.google.common.collect.Lists;
 import one.util.streamex.EntryStream;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
@@ -10,7 +9,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.awt.Point;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
