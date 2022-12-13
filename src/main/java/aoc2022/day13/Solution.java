@@ -1,17 +1,15 @@
 package aoc2022.day13;
 
 import aoc2022.input.InputLoader;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.scalified.tree.TreeNode;
+import com.scalified.tree.multinode.ArrayMultiTreeNode;
 import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
+import org.javatuples.Pair;
 
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,55 +17,52 @@ public final class Solution {
     public static void main(final String[] args) {
         final var input = InputLoader.read("day13");
         final var packets = StreamEx.split(input, System.lineSeparator() + System.lineSeparator())
-                .map(packetPair -> packetPair.lines().toList())
-                .map(packetPair -> packetPair.stream().map(Solution::parsePackets).toList())
-                .map(packetPair -> Pair.of(packetPair.get(0), packetPair.get(1)))
+                .map(packetPair -> packetPair.lines()
+                        .map(Solution::parseCharQueue)
+                        .map(Solution::parsePacketTree)
+                        .toList())
+                .map(Pair::fromCollection)
                 .toList();
 
         final var result1 = EntryStream.of(packets)
-                .filterValues(packetPair -> packetPair.getLeft().compareTo(packetPair.getRight()) < 0)
+                .filterValues(packetPair -> compare(packetPair.getValue0(), packetPair.getValue1()) < 0)
                 .keys()
                 .mapToInt(Integer::valueOf)
                 .map(i -> i + 1)
                 .sum();
         System.out.println(result1);
 
-        final var dividerPacket2 = new Packet();
-        final var dividerPacket2Value = new Packet();
-        dividerPacket2Value.setValue(Optional.of(2));
-        dividerPacket2.getPackets().add(dividerPacket2Value);
+        final var dividerPacket2 = new ArrayMultiTreeNode<Integer>(null);
+        dividerPacket2.add(new ArrayMultiTreeNode<>(2));
 
-        final var dividerPacket6 = new Packet();
-        final var dividerPacket6Value = new Packet();
-        dividerPacket6Value.setValue(Optional.of(6));
-        dividerPacket6.getPackets().add(dividerPacket6Value);
+        final var dividerPacket6 = new ArrayMultiTreeNode<Integer>(null);
+        dividerPacket6.add(new ArrayMultiTreeNode<>(6));
 
         final var sortedPackets = StreamEx.of(packets)
-                .flatMap(pair -> Stream.of(pair.getLeft(), pair.getRight()))
+                .flatMap(pair -> Stream.of(pair.getValue0(), pair.getValue1()))
                 .append(dividerPacket2, dividerPacket6)
-                .sorted()
+                .sorted(Solution::compare)
                 .toList();
-        sortedPackets.forEach(System.out::println);
         final var result2 = EntryStream.of(sortedPackets)
                 .filterValues(packet -> packet == dividerPacket2 || packet == dividerPacket6)
                 .keys()
                 .mapToInt(Integer::valueOf)
                 .map(i -> i + 1)
-                .reduce(Math::multiplyExact);
+                .reduce(Math::multiplyExact)
+                .orElseThrow();
         System.out.println(result2);
     }
 
-    private static Packet parsePackets(final String rawPacket) {
-        final var symbolQueue = rawPacket.chars()
-                .limit(rawPacket.length() - 1)
+    private static Deque<String> parseCharQueue(final String raw) {
+        return raw.chars()
+                .limit(raw.length() - 1)
                 .skip(1)
                 .mapToObj(Character::toString)
                 .collect(Collectors.toCollection(LinkedList::new));
-        return parsePacket(symbolQueue);
     }
 
-    private static Packet parsePacket(final Deque<String> characters) {
-        final var packet = new Packet();
+    private static ArrayMultiTreeNode<Integer> parsePacketTree(final Deque<String> characters) {
+        final var node = new ArrayMultiTreeNode<Integer>(null);
         while (!characters.isEmpty()) {
             var symbol = characters.pollFirst();
             if (StringUtils.isNumeric(symbol)) {
@@ -76,60 +71,41 @@ public final class Solution {
                 while (!characters.isEmpty() && StringUtils.isNumeric(characters.getFirst())) {
                     symbolBuilder.append(characters.pollFirst());
                 }
-                final var numberPacket = new Packet();
-                numberPacket.setValue(Optional.of(Integer.parseInt(symbolBuilder.toString())));
-                packet.getPackets().add(numberPacket);
+                final var numberNode = new ArrayMultiTreeNode<>(Integer.parseInt(symbolBuilder.toString()));
+                node.add(numberNode);
             } else if (symbol.contains("[")) {
-                packet.getPackets().add(parsePacket(characters));
+                node.add(parsePacketTree(characters));
             } else if (symbol.contains("]")) {
-                return packet;
+                break;
             }
         }
-        return packet;
+        return node;
     }
-}
 
-@Data
-@NoArgsConstructor
-final class Packet implements Comparable<Packet> {
-    private Optional<Integer> value = Optional.empty();
-    private List<Packet> packets = new LinkedList<>();
-
-    @Override
-    public int compareTo(final Packet right) {
-        final var leftValue = this.getValue();
-        final var rightValue = right.getValue();
-        if (leftValue.isPresent() && rightValue.isPresent() && !rightValue.get().equals(leftValue.get())) {
-            return leftValue.get() - rightValue.get();
-        } else if (leftValue.isPresent() && rightValue.isPresent()) {
-            return 0;
-        } else if (leftValue.isPresent()) {
-            final var wrappedValue = new Packet();
-            wrappedValue.setValue(leftValue);
-            final var wrappedLeft = new Packet();
-            wrappedLeft.getPackets().add(wrappedValue);
-            return wrappedLeft.compareTo(right);
-        } else if (rightValue.isPresent()) {
-            final var wrappedValue = new Packet();
-            wrappedValue.setValue(rightValue);
-            final var wrappedRight = new Packet();
-            wrappedRight.getPackets().add(wrappedValue);
-            return this.compareTo(wrappedRight);
+    private static int compare(final TreeNode<Integer> left, final TreeNode<Integer> right) {
+        final var leftValue = left.data();
+        final var rightValue = right.data();
+        if (leftValue != null && rightValue != null) {
+            return leftValue - rightValue;
+        } else if (leftValue != null) {
+            final var wrappedNode = new ArrayMultiTreeNode<Integer>(null);
+            wrappedNode.add(new ArrayMultiTreeNode<>(leftValue));
+            return compare(wrappedNode, right);
+        } else if (rightValue != null) {
+            final var wrappedNode = new ArrayMultiTreeNode<Integer>(null);
+            wrappedNode.add(new ArrayMultiTreeNode<>(rightValue));
+            return compare(left, wrappedNode);
         } else {
-            final var maxSize = Math.min(this.getPackets().size(), right.getPackets().size());
+            final var maxSize = Math.min(left.subtrees().size(), right.subtrees().size());
             for (int i = 0; i < maxSize; ++i) {
-                final var leftSubpacket = this.getPackets().get(i);
-                final var rightSubpacket = right.getPackets().get(i);
-                final var subPacketsEqual = leftSubpacket.compareTo(rightSubpacket);
+                final var leftSubTree = left.subtrees().stream().skip(i).findFirst().orElseThrow();
+                final var rightSubTree = right.subtrees().stream().skip(i).findFirst().orElseThrow();
+                final var subPacketsEqual = compare(leftSubTree, rightSubTree);
                 if (subPacketsEqual != 0) {
                     return subPacketsEqual;
                 }
             }
-            if (this.getPackets().size() == right.getPackets().size()) {
-                return 0;
-            } else {
-                return this.getPackets().size() - right.getPackets().size();
-            }
+            return left.subtrees().size() - right.subtrees().size();
         }
     }
 }
