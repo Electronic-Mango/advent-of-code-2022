@@ -12,6 +12,7 @@ import org.apache.commons.lang3.function.ToBooleanBiFunction;
 import org.javatuples.Pair;
 
 import java.awt.Point;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -29,7 +30,7 @@ public final class Solution {
                         .pairMap(Pair::add))
                 .flatMap(line -> expandLine(line.getValue0(), line.getValue1(), line.getValue2(), line.getValue3()))
                 .forEach(point -> occupied.put(point.getValue0(), point.getValue1()));
-        final var height = occupied.values().stream().mapToInt(Integer::valueOf).max().orElseThrow() + FLOOR_DISTANCE;
+        final var height = Collections.max(occupied.values()) + FLOOR_DISTANCE;
         expandLine(SAND_START_X - height, height, SAND_START_X + height, height)
                 .forEach(point -> occupied.put(point.getValue0(), point.getValue1()));
 
