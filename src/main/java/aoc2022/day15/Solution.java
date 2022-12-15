@@ -4,7 +4,8 @@ import aoc2022.input.InputLoader;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.Getter;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 
@@ -29,11 +30,12 @@ public final class Solution {
                         .toListAndThen(list -> new Sensor(list.get(0), list.get(1), list.get(2), list.get(3))))
                 .toSet();
 
-        final var beacons = sensors.stream().filter(sensor -> sensor.getBeaconRow() == ROW).count();
-        final var occupied = getRangeSet(sensors, ROW).asRanges()
-                .stream()
-                .mapToInt(range -> range.lowerEndpoint() - range.upperEndpoint())
-                .map(Math::abs)
+        final var beacons = sensors.stream().map(Sensor::getBeaconRow).filter(row -> row == ROW).distinct().count();
+        final var occupied = StreamEx.of(getRangeSet(sensors, ROW).asRanges())
+                .mapToEntry(Range::lowerEndpoint, Range::upperEndpoint)
+                .mapKeyValue(Math::subtractExact)
+                .mapToInt(Math::abs)
+                .map(Math::incrementExact)
                 .sum();
         final var result1 = occupied - beacons;
         System.out.println(result1);
@@ -57,7 +59,7 @@ public final class Solution {
     }
 }
 
-@Data
+@Getter(AccessLevel.PACKAGE)
 final class Sensor {
     private final int x;
     private final int y;
