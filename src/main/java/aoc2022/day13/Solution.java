@@ -3,6 +3,8 @@ package aoc2022.day13;
 import aoc2022.input.InputLoader;
 import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
+import org.apache.commons.collections4.IterableUtils;
+import org.electronicmango.zipper.Zipper;
 import org.javatuples.Pair;
 import org.json.JSONArray;
 
@@ -24,7 +26,7 @@ public final class Solution {
                 .sum();
         System.out.println(result1);
 
-        final var dividerPackets = Set.of(array("[2]"), array("[6]"));
+        final var dividerPackets = Set.of(wrapToJsonArray("[2]"), wrapToJsonArray("[6]"));
         final var result2 = StreamEx.of(packets)
                 .flatMap(pair -> pair.toList().stream())
                 .append(dividerPackets)
@@ -43,24 +45,22 @@ public final class Solution {
         if (left instanceof Integer && right instanceof Integer) {
             return (Integer) left - (Integer) right;
         } else if (left instanceof Integer) {
-            return compare(array(left), right);
+            return compare(wrapToJsonArray(left), right);
         } else if (right instanceof Integer) {
-            return compare(left, array(right));
-        } else {
-            final var leftArray = (JSONArray) left;
-            final var rightArray = (JSONArray) right;
-            final var maxSize = Math.min(leftArray.length(), rightArray.length());
-            for (int i = 0; i < maxSize; ++i) {
-                final var subPacketsEqual = compare(leftArray.get(i), rightArray.get(i));
-                if (subPacketsEqual != 0) {
-                    return subPacketsEqual;
-                }
-            }
-            return leftArray.length() - rightArray.length();
+            return compare(left, wrapToJsonArray(right));
         }
+        final var leftArray = (JSONArray) left;
+        final var rightArray = (JSONArray) right;
+        return Zipper.zip(IterableUtils.toList(leftArray), IterableUtils.toList(rightArray))
+                .stream()
+                .filter(pair -> pair.size() == 2)
+                .map(pair -> compare(pair.get(0), pair.get(1)))
+                .filter(comparisonResult -> comparisonResult != 0)
+                .findFirst()
+                .orElseGet(() -> leftArray.length() - rightArray.length());
     }
 
-    private static JSONArray array(final Object object) {
+    private static JSONArray wrapToJsonArray(final Object object) {
         return new JSONArray("[" + object + "]");
     }
 }
