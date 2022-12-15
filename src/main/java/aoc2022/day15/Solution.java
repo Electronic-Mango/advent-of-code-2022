@@ -2,99 +2,76 @@ package aoc2022.day15;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
-import lombok.Data;
+import one.util.streamex.IntStreamEx;
+import one.util.streamex.StreamEx;
 
 import java.awt.Point;
-import java.math.BigInteger;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Objects;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.Collector;
 
 public final class Solution {
+    private static final Pattern SENSOR_PATTERN = Pattern.compile(".+=(-?\\d+).+=(-?\\d+).+=(-?\\d+).+=(-?\\d+)");
     private static final int ROW = 2_000_000;
     private static final int MAX = 4_000_000;
-    private static final Pattern SENSOR_PATTERN = Pattern.compile(".+=(-?\\d+).+=(-?\\d+).+=(-?\\d+).+=(-?\\d+)");
 
     public static void main(final String[] args) {
-        final var sensors = InputLoader.readLines("day15").stream()
+        final var sensors = StreamEx.of(InputLoader.readLines("day15"))
                 .map(SENSOR_PATTERN::matcher)
                 .filter(Matcher::find)
-                .map(match -> Stream.of(match.group(1), match.group(2), match.group(3), match.group(4))
+                .map(match -> StreamEx.of(match.group(1), match.group(2), match.group(3), match.group(4))
                         .map(Integer::parseInt)
-                        .toList())
-                .map(values -> new Sensor(values.get(0), values.get(1), values.get(2), values.get(3)))
-                .toList();
-        sensors.forEach(System.out::println);
-        final var result1 = sensors.stream()
-                .map(sensor -> sensor.detectedInRow(ROW))
-                .flatMap(Set::stream).distinct().count();
-        final var beacons = sensors.stream()
-                .map(Sensor::getBeacon)
-                .distinct()
-                .filter(sensor -> sensor.y == ROW)
-                .count();
-        System.out.println(result1 - beacons);
-        for (int y = 0; y < MAX; ++y) {
-            final int finalY = y;
-            final var scanned = TreeRangeSet.<Integer>create();
-            sensors.stream().map(sensor -> sensor.rangeInRow(finalY)).filter(Objects::nonNull).forEach(scanned::add);
-            if (!scanned.encloses(Range.closed(0, MAX))) {
-                final var x = scanned.complement()
-                        .asDescendingSetOfRanges()
-                        .stream()
-                        .skip(1)
-                        .findFirst()
-                        .orElseThrow()
-                        .lowerEndpoint() + 1;
-                final var xBi = BigInteger.valueOf(x);
-                System.out.println(xBi.multiply(BigInteger.valueOf(MAX)).add(BigInteger.valueOf(y)));
-                break;
-            }
-        }
+                        .toListAndThen(list -> new Sensor(list.get(0), list.get(1), list.get(2), list.get(3))))
+                .toSet();
+
+        final var beacons = sensors.stream().filter(sensor -> sensor.beaconInRow(ROW)).count();
+        final var occupied = getRangeSet(sensors, ROW).asRanges()
+                .stream()
+                .mapToInt(range -> range.lowerEndpoint() - range.upperEndpoint())
+                .map(Math::abs)
+                .sum();
+        final var result1 = occupied - beacons;
+        System.out.println(result1);
+
+        final var result2 = IntStreamEx.range(MAX)
+                .boxed()
+                .mapToEntry(Function.identity(), y -> getRangeSet(sensors, y))
+                .filterValues(ranges -> !ranges.encloses(Range.closed(0, MAX)))
+                .mapValues(range -> range.asRanges().iterator().next().upperEndpoint() + 1L)
+                .mapKeyValue((y, x) -> (x * MAX) + y)
+                .findFirst()
+                .orElseThrow();
+        System.out.println(result2);
+    }
+
+    private static RangeSet<Integer> getRangeSet(final Collection<Sensor> ranges, final int row) {
+        return ranges.stream()
+                .map(sensor -> sensor.searchedRange(row))
+                .filter(Objects::nonNull)
+                .collect(Collector.of(TreeRangeSet::create, RangeSet::add, (s1, s2) -> s1));
     }
 }
 
-@Data
 final class Sensor {
     private final Point position;
     private final Point beacon;
-    private final int distance;
 
     Sensor(final int px, final int py, final int bx, final int by) {
         position = new Point(px, py);
         beacon = new Point(bx, by);
-        distance = Math.abs(position.x - beacon.x) + Math.abs(position.y - beacon.y);
     }
 
-    int distance() {
-        return Math.abs(position.x - beacon.x) + Math.abs(position.y - beacon.y);
+    boolean beaconInRow(final int y) {
+        return beacon.y == y;
     }
 
-    Range<Integer> rangeInRow(final int y) {
-        final var dy = Math.abs(position.y - y);
-        final var count = distance - dy;
-        if (count < 0) {
-            return null;
-        }
-        final var start = position.x - count;
-        final var end = position.x + count;
-        return Range.closed(start, end);
-    }
-
-    Set<Point> detectedInRow(final int y) {
-        final var dy = Math.abs(position.y - y);
-        final var count = distance - dy;
-        if (count < 0) {
-            return Collections.emptySet();
-        }
-        final var start = position.x - count;
-        final var end = position.x + count;
-        return IntStream.rangeClosed(start, end).mapToObj(x -> new Point(x, y)).collect(Collectors.toSet());
+    Range<Integer> searchedRange(final int y) {
+        final var count = Math.abs(position.x - beacon.x) + Math.abs(position.y - beacon.y) - Math.abs(position.y - y);
+        return count < 0 ? null : Range.closed(position.x - count, position.x + count);
     }
 }
