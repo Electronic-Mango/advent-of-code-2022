@@ -53,7 +53,6 @@ public final class Solution {
         final var rightArray = (JSONArray) right;
         return Zipper.zip(IterableUtils.toList(leftArray), IterableUtils.toList(rightArray))
                 .stream()
-                .filter(pair -> pair.size() == 2)
                 .map(pair -> compare(pair.get(0), pair.get(1)))
                 .filter(comparisonResult -> comparisonResult != 0)
                 .findFirst()
