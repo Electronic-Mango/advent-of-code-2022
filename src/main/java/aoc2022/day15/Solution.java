@@ -4,10 +4,10 @@ import aoc2022.input.InputLoader;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
+import lombok.Data;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 
-import java.awt.Point;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Function;
@@ -29,7 +29,7 @@ public final class Solution {
                         .toListAndThen(list -> new Sensor(list.get(0), list.get(1), list.get(2), list.get(3))))
                 .toSet();
 
-        final var beacons = sensors.stream().filter(sensor -> sensor.beaconInRow(ROW)).count();
+        final var beacons = sensors.stream().filter(sensor -> sensor.getBeaconRow() == ROW).count();
         final var occupied = getRangeSet(sensors, ROW).asRanges()
                 .stream()
                 .mapToInt(range -> range.lowerEndpoint() - range.upperEndpoint())
@@ -57,21 +57,22 @@ public final class Solution {
     }
 }
 
+@Data
 final class Sensor {
-    private final Point position;
-    private final Point beacon;
+    private final int x;
+    private final int y;
+    private final int distance;
+    private final int beaconRow;
 
     Sensor(final int px, final int py, final int bx, final int by) {
-        position = new Point(px, py);
-        beacon = new Point(bx, by);
+        x = px;
+        y = py;
+        beaconRow = by;
+        distance = Math.abs(x - bx) + Math.abs(y - by);
     }
 
-    boolean beaconInRow(final int y) {
-        return beacon.y == y;
-    }
-
-    Range<Integer> searchedRange(final int y) {
-        final var count = Math.abs(position.x - beacon.x) + Math.abs(position.y - beacon.y) - Math.abs(position.y - y);
-        return count < 0 ? null : Range.closed(position.x - count, position.x + count);
+    Range<Integer> searchedRange(final int row) {
+        final var count = distance - Math.abs(y - row);
+        return count < 0 ? null : Range.closed(x - count, x + count);
     }
 }
