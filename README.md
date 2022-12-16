@@ -1,2 +1,3 @@
 # Advent of Code 2022
-My solutions of Advent of Code 2022 puzzles.
+
+My solutions to Advent of Code 2022 puzzles, written in Java.
