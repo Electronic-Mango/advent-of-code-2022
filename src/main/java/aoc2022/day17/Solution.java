@@ -7,9 +7,6 @@ import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
 
 import java.awt.Point;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,18 +22,34 @@ public final class Solution {
     private static final Iterator<Supplier<Shape>> SHAPES_CYCLE = Iterables.cycle(SHAPES).iterator();
 
     public static void main(String[] args) {
-        final var times = BigDecimal.valueOf(1000000000000L)
-                .add(BigDecimal.valueOf(-15))
-                .divide(BigDecimal.valueOf(35), RoundingMode.DOWN);
-        System.out.println(times);
-        System.out.println(BigInteger.valueOf(1000000000000L).mod(times.toBigIntegerExact()));
-//        System.out.println( % times);
-        System.out.println(25 + (53L * times.longValue()));
+        final var repeatingBlocks = 1000000000000L - 1186;
+        final var times = (repeatingBlocks / 1700);
+        System.out.println("Times: " + times);
+        System.out.println("Mod: " + (repeatingBlocks % times));
+        System.out.println((2654 * (times - 1)) + 7473);
+        System.out.println(7473 + ((4508 - 1854L) * 588235292));
+        System.out.println((1700L * times) + 1186 + 1900);
         System.out.println();
 
-        System.exit(-1);
+        System.out.println(5601 + ((times - 1) * 2654));
+        System.out.println();
 
-        final var input = InputLoader.read("day17", "testinput");
+        System.out.println((times * 1700) + 1900);
+        System.out.println();
+
+
+//        final var times = BigDecimal.valueOf(1000000000000L)
+//                .add(BigDecimal.valueOf(-1186))
+//                .divide(BigDecimal.valueOf(1700), RoundingMode.DOWN);
+//        System.out.println("Times: " + times);
+//        System.out.println("Mod: " + BigInteger.valueOf(1000000000000L).mod(times.toBigIntegerExact()));
+////        System.out.println( % times);
+//        System.out.println((2654 * (times.longValue() - 1)) + 7473);
+//        System.out.println();
+
+//        System.exit(-1);
+
+        final var input = InputLoader.read("day17", "input");
         final var directions = input.chars().boxed().toList();
         final var dirIterator = Iterables.cycle(directions).iterator();
         Set<Point> solidPoints = new HashSet<>();
@@ -47,13 +60,15 @@ public final class Solution {
         final var iterations = SHAPES.size() * directions.size() * 4;
         System.out.println("Iterations " + iterations);
 
-        solidPoints = getPoints(dirIterator, solidPoints, 15);
+        solidPoints = getPoints(dirIterator, solidPoints, 1186);
         var maxHeight1 = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
         System.out.println(maxHeight1);
+//        printSolidPoints(solidPoints);
 
-        solidPoints = getPoints(dirIterator, solidPoints, 35);
-        solidPoints = getPoints(dirIterator, solidPoints, 35);
-        printSolidPoints(solidPoints);
+        solidPoints = getPoints(dirIterator, solidPoints, 1700);
+        System.out.println(solidPoints.stream().mapToLong(p -> p.y).max().orElse(0));
+        solidPoints = getPoints(dirIterator, solidPoints, 714);
+//        printSolidPoints(solidPoints);
         System.out.println(solidPoints.stream().mapToLong(p -> p.y).max().orElse(0));
 
 //        var previousMaxHeight = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
@@ -76,9 +91,9 @@ public final class Solution {
     private static Set<Point> getPoints(Iterator<Integer> dirIterator, Set<Point> solidPoints, int iterations) {
         var shapeCount = 0;
         for (long i = 0; i < iterations; ++i) {
-            if (i % 1000 == 0) {
-                System.out.println(i + " " + solidPoints.size());
-            }
+//            if (i % 1000 == 0) {
+//                System.out.println(i + " " + solidPoints.size());
+//            }
             final var startRow = solidPoints.stream().mapToInt(p -> p.y).max().orElse(0) + 4;
             final var shape = SHAPES_CYCLE.next().get();
             shapeCount++;
@@ -101,10 +116,10 @@ public final class Solution {
             }
 //            System.out.println(shape);
             solidPoints.addAll(shape.getPoints());
-            if (shape.getPoints().stream().anyMatch(p -> ((p.y) % 25) == 0)) {
-                System.out.println("COUNT=" + shapeCount + " ITERATION=" + i);
+//            if (shape.getPoints().stream().anyMatch(p -> ((p.y) % 25) == 0)) {
+//                System.out.println("COUNT=" + shapeCount + " ITERATION=" + i);
 //                printSolidPoints(solidPoints);
-            }
+//            }
 //            final var rows = StreamEx.of(solidPoints).groupingBy(p -> p.y);
 //            if (rows.values().stream().anyMatch(l -> l.size() == 7)) {
 //                final var maxRow = EntryStream.of(rows).filterValues(l -> l.size() == 7).keys().mapToLong
@@ -113,7 +128,7 @@ public final class Solution {
 //            }
 //            System.out.println(solidPoints.size());
         }
-        System.out.println(shapeCount);
+        System.out.println("Shape count: " + shapeCount);
         return solidPoints;
     }
 
