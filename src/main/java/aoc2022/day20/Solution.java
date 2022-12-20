@@ -1,7 +1,9 @@
 package aoc2022.day20;
 
 import aoc2022.input.InputLoader;
-import one.util.streamex.EntryStream;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.LongStreamEx;
 import one.util.streamex.StreamEx;
@@ -21,29 +23,30 @@ public final class Solution {
     }
 
     private static long solve(final List<Integer> input, final long multiplier, final int mixes) {
-        final var keyedInput = EntryStream.of(input)
-                .mapValues(value -> value * multiplier)
-                .mapKeyValue(Number::new)
-                .toList();
-        final var mixedInput = new ArrayList<>(keyedInput);
-        IntStreamEx.range(mixes).forEach(mix -> mixInput(keyedInput, mixedInput));
-        final var zeroIndex = StreamEx.of(mixedInput).map(Number::value).indexOf(value -> value == 0).orElseThrow();
+        final var originalInput = input.stream().map(value -> value * multiplier).map(Number::new).toList();
+        final var mixedInput = new ArrayList<>(originalInput);
+        IntStreamEx.range(mixes).forEach(mix -> mixInput(originalInput, mixedInput));
+        final var zeroIndex = StreamEx.of(mixedInput).map(Number::getValue).indexOf(value -> value == 0).orElseThrow();
         return LongStreamEx.rangeClosed(1000, 3000, 1000)
                 .map(i -> i + zeroIndex)
                 .mapToInt(i -> Math.floorMod(i, input.size()))
                 .mapToObj(mixedInput::get)
-                .mapToLong(Number::value)
+                .mapToLong(Number::getValue)
                 .sum();
     }
 
-    private static void mixInput(final List<Number> original, final List<Number> mixed) {
-        for (final var originalNumber : original) {
-            final var currentIndex = mixed.indexOf(originalNumber);
-            final var number = mixed.remove(currentIndex);
-            final var newIndex = Math.floorMod(currentIndex + number.value(), mixed.size());
-            mixed.add(newIndex, number);
+    private static void mixInput(final List<Number> originalInput, final List<Number> mixedInput) {
+        for (final var number : originalInput) {
+            final var currentIndex = mixedInput.indexOf(number);
+            mixedInput.remove(currentIndex);
+            final var newIndex = Math.floorMod(currentIndex + number.getValue(), mixedInput.size());
+            mixedInput.add(newIndex, number);
         }
     }
 
-    private record Number(int originalIndex, long value) { }
+    @Getter(AccessLevel.PRIVATE)
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    private static final class Number {
+        private final long value;
+    }
 }
