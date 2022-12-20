@@ -10,6 +10,7 @@ import one.util.streamex.StreamEx;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public final class Solution {
     public static void main(String[] args) {
@@ -36,12 +37,11 @@ public final class Solution {
     }
 
     private static void mixInput(final List<Number> originalInput, final List<Number> mixedInput) {
-        for (final var number : originalInput) {
-            final var currentIndex = mixedInput.indexOf(number);
-            mixedInput.remove(currentIndex);
-            final var newIndex = Math.floorMod(currentIndex + number.getValue(), mixedInput.size());
-            mixedInput.add(newIndex, number);
-        }
+        StreamEx.of(originalInput)
+                .mapToEntry(mixedInput::indexOf, Function.identity())
+                .peekValues(mixedInput::remove)
+                .mapToKey((index, number) -> Math.floorMod(index + number.getValue(), mixedInput.size()))
+                .forKeyValue(mixedInput::add);
     }
 
     @Getter(AccessLevel.PRIVATE)
