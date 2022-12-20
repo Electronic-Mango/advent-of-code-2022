@@ -1,7 +1,11 @@
 package aoc2022.input;
 
-import resource.ResourceLoader;
+import com.google.common.io.Resources;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class InputLoader {
@@ -13,7 +17,11 @@ public final class InputLoader {
     }
 
     public static String read(final String day, final String file) {
-        return ResourceLoader.loadResource(getPath(day, file));
+        try {
+            return Resources.toString(getUrl(day, file), Charset.defaultCharset());
+        } catch (final IOException ignored) {
+            return "";
+        }
     }
 
     public static List<String> readLines(final String day) {
@@ -21,10 +29,14 @@ public final class InputLoader {
     }
 
     public static List<String> readLines(final String day, final String file) {
-        return ResourceLoader.loadResourceLines(getPath(day, file));
+        try {
+            return Resources.readLines(getUrl(day, file), Charset.defaultCharset());
+        } catch (final IOException ignored) {
+            return new ArrayList<>();
+        }
     }
 
-    private static String getPath(final String day, final String file) {
-        return String.format(INPUT_FILE_PATTERN, day, file);
+    private static URL getUrl(final String day, final String file) {
+        return Resources.getResource(String.format(INPUT_FILE_PATTERN, day, file));
     }
 }
