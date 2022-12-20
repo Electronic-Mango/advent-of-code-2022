@@ -6,6 +6,7 @@ import one.util.streamex.IntStreamEx;
 import one.util.streamex.LongStreamEx;
 import one.util.streamex.StreamEx;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class Solution {
@@ -23,28 +24,25 @@ public final class Solution {
         final var keyedInput = EntryStream.of(input)
                 .mapValues(value -> value * multiplier)
                 .mapKeyValue(Number::new)
-                .toMutableList();
-        IntStreamEx.range(mixes).forEach(mix -> mixInput(keyedInput));
-        final var zeroIndex = StreamEx.of(keyedInput).map(Number::value).indexOf(value -> value == 0).orElseThrow();
+                .toList();
+        final var mixedInput = new ArrayList<>(keyedInput);
+        IntStreamEx.range(mixes).forEach(mix -> mixInput(keyedInput, mixedInput));
+        final var zeroIndex = StreamEx.of(mixedInput).map(Number::value).indexOf(value -> value == 0).orElseThrow();
         return LongStreamEx.rangeClosed(1000, 3000, 1000)
                 .map(i -> i + zeroIndex)
                 .mapToInt(i -> Math.floorMod(i, input.size()))
-                .mapToObj(keyedInput::get)
+                .mapToObj(mixedInput::get)
                 .mapToLong(Number::value)
                 .sum();
     }
 
-    private static void mixInput(final List<Number> input) {
-        for (int originalIndex = 0; originalIndex < input.size(); ++originalIndex) {
-            final var currentIndex = getCurrentIndex(input, originalIndex);
-            final var number = input.remove(currentIndex);
-            final var newIndex = Math.floorMod(currentIndex + number.value(), input.size());
-            input.add(newIndex, number);
+    private static void mixInput(final List<Number> original, final List<Number> mixed) {
+        for (final var originalNumber : original) {
+            final var currentIndex = mixed.indexOf(originalNumber);
+            final var number = mixed.remove(currentIndex);
+            final var newIndex = Math.floorMod(currentIndex + number.value(), mixed.size());
+            mixed.add(newIndex, number);
         }
-    }
-
-    private static int getCurrentIndex(final List<Number> input, final int originalIndex) {
-        return (int) StreamEx.of(input).indexOf(number -> number.originalIndex() == originalIndex).orElseThrow();
     }
 
     private record Number(int originalIndex, long value) { }
