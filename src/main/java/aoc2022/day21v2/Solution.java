@@ -1,6 +1,7 @@
 package aoc2022.day21v2;
 
 import aoc2022.input.InputLoader;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -10,64 +11,62 @@ import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
 import java.util.Map;
+import java.util.function.DoubleBinaryOperator;
 
 public final class Solution {
     private static final String ROOT = "root";
     private static final String HUMAN = "humn";
 
     public static void main(String[] args) {
-        final var input = StreamEx.of(InputLoader.readLines("day21"))
+        final var definitions = StreamEx.of(InputLoader.readLines("day21"))
                 .map(line -> StreamEx.split(line, ": ").toListAndThen(Pair::fromCollection))
                 .mapToEntry(Pair::getValue0, Pair::getValue1)
                 .toMap();
-        final var nodeMap = EntryStream.of(input).mapToValue(Solution::parse).toMap();
+        final var nodeMap = EntryStream.of(definitions).mapToValue(Solution::parseWithoutBranches).toMap();
         nodeMap.values()
                 .stream()
-                .filter(Inner.class::isInstance)
-                .map(Inner.class::cast)
-                .forEach(node -> branches(node, input, nodeMap));
-        final var root = (Inner) nodeMap.get(ROOT);
+                .filter(Operation.class::isInstance)
+                .map(Operation.class::cast)
+                .forEach(node -> addBranches(node, definitions, nodeMap));
+        final var root = (Operation) nodeMap.get(ROOT);
 
-        final var result1 = (long) root.getValue();
-        System.out.println(result1);
+        final var result1 = root.getValue();
+        System.out.println((long) result1);
 
-        final var human = (Leaf) nodeMap.get(HUMAN);
+        final var human = (Value) nodeMap.get(HUMAN);
         human.setValue(Double.NaN);
-        final var node1 = root.getNode1();
-        final var node2 = root.getNode2();
-        final var known = node1.hasX() ? node2 : node1;
-        final var unknown = node1.hasX() ? node1 : node2;
-        final var value = known.getValue();
-        final var result2 = (long) unknown.getX(value);
-        System.out.println(result2);
+        final var branch1 = root.getBranch1();
+        final var branch2 = root.getBranch2();
+        final var result2 = branch1.hasX() ? branch1.getX(branch2.getValue()) : branch2.getX(branch1.getValue());
+        System.out.println((long) result2);
     }
 
-    private static Node parse(final String name, final String definition) {
+    private static Node parseWithoutBranches(final String id, final String definition) {
         if (!definition.contains(" ")) {
-            return new Leaf(name, Double.parseDouble(definition));
+            return new Value(id, Double.parseDouble(definition));
         }
-        final var operation = StreamEx.split(definition, " ").skip(1).limit(1).findAny().orElseThrow();
+        final var operation = StreamEx.split(definition, " ").toList().get(1);
         return switch (operation) {
-            case "+" -> new Add(name);
-            case "-" -> new Subtract(name);
-            case "*" -> new Multiply(name);
-            case "/" -> new Divide(name);
+            case "+" -> new Operation(id, (v1, v2) -> v1 + v2, (o, v) -> o - v, (o, v) -> o - v);
+            case "-" -> new Operation(id, (v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o);
+            case "*" -> new Operation(id, (v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v);
+            case "/" -> new Operation(id, (v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o);
             default -> null;
         };
     }
 
-    private static void branches(final Inner node, final Map<String, String> input, final Map<String, Node> nodes) {
-        final var operation = input.get(node.getId());
+    private static void addBranches(final Operation node,
+                                    final Map<String, String> definitions,
+                                    final Map<String, Node> nodes) {
+        final var operation = definitions.get(node.getId());
         final var operationElements = StreamEx.split(operation, " ").toListAndThen(Triplet::fromCollection);
-        final var node1 = nodes.get(operationElements.getValue0());
-        final var node2 = nodes.get(operationElements.getValue2());
-        node.setNode1(node1);
-        node.setNode2(node2);
+        node.setBranch1(nodes.get(operationElements.getValue0()));
+        node.setBranch2(nodes.get(operationElements.getValue2()));
     }
 }
 
-@Getter
-@RequiredArgsConstructor
+@Getter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 abstract class Node {
     private final String id;
 
@@ -78,18 +77,14 @@ abstract class Node {
     abstract double getX(final double offset);
 }
 
-@Setter
-final class Leaf extends Node {
+@Getter(AccessLevel.PACKAGE)
+@Setter(AccessLevel.PACKAGE)
+final class Value extends Node {
     private double value;
 
-    Leaf(final String id, final double value) {
+    Value(final String id, final double value) {
         super(id);
         this.value = value;
-    }
-
-    @Override
-    double getValue() {
-        return value;
     }
 
     @Override
@@ -103,125 +98,41 @@ final class Leaf extends Node {
     }
 }
 
-@Getter
-@Setter
-abstract class Inner extends Node {
-    private Node node1;
-    private Node node2;
+@Getter(AccessLevel.PACKAGE)
+@Setter(AccessLevel.PACKAGE)
+final class Operation extends Node {
+    private final DoubleBinaryOperator operation;
+    private final DoubleBinaryOperator inverseLeft;
+    private final DoubleBinaryOperator inverseRight;
+    private Node branch1;
+    private Node branch2;
 
-    Inner(final String id) {
+    Operation(final String id,
+              final DoubleBinaryOperator operation,
+              final DoubleBinaryOperator inverseLeft,
+              final DoubleBinaryOperator inverseRight) {
         super(id);
+        this.operation = operation;
+        this.inverseLeft = inverseLeft;
+        this.inverseRight = inverseRight;
     }
 
     @Override
     double getValue() {
-        return operation(node1.getValue(), node2.getValue());
+        return operation.applyAsDouble(branch1.getValue(), branch2.getValue());
     }
 
     @Override
     boolean hasX() {
-        return node1.hasX() || node2.hasX();
+        return branch1.hasX() || branch2.hasX();
     }
 
     @Override
     double getX(final double offset) {
-        if (node1.hasX()) {
-            return node1.getX(inverseOperation1(offset, node2.getValue()));
+        if (branch1.hasX()) {
+            return branch1.getX(inverseLeft.applyAsDouble(offset, branch2.getValue()));
         } else {
-            return node2.getX(inverseOperation2(offset, node1.getValue()));
+            return branch2.getX(inverseRight.applyAsDouble(offset, branch1.getValue()));
         }
-    }
-
-    abstract double inverseOperation1(final double offset, final double value);
-
-    abstract double inverseOperation2(final double offset, final double value);
-
-    abstract double operation(final double value1, final double value2);
-}
-
-final class Add extends Inner {
-    Add(final String id) {
-        super(id);
-    }
-
-    @Override
-    double operation(final double value1, final double value2) {
-        return value1 + value2;
-    }
-
-    @Override
-    double inverseOperation1(double offset, double value) {
-        return offset - value;
-    }
-
-    @Override
-    double inverseOperation2(double offset, double value) {
-        return offset - value;
-    }
-}
-
-final class Subtract extends Inner {
-
-    Subtract(final String id) {
-        super(id);
-    }
-
-    @Override
-    double operation(final double value1, final double value2) {
-        return value1 - value2;
-    }
-
-    @Override
-    double inverseOperation1(double offset, double value) {
-        return offset + value;
-    }
-
-    @Override
-    double inverseOperation2(double offset, double value) {
-        return value - offset;
-    }
-}
-
-final class Multiply extends Inner {
-
-    Multiply(final String id) {
-        super(id);
-    }
-
-    @Override
-    double operation(final double value1, final double value2) {
-        return value1 * value2;
-    }
-
-    @Override
-    double inverseOperation1(double offset, double value) {
-        return offset / value;
-    }
-
-    @Override
-    double inverseOperation2(double offset, double value) {
-        return offset / value;
-    }
-}
-
-final class Divide extends Inner {
-
-    Divide(final String id) {
-        super(id);
-    }
-
-    @Override
-    double operation(final double value1, final double value2) {
-        return value1 / value2;
-    }
-
-    @Override
-    double inverseOperation1(double offset, double value) {
-        return offset * value;
-    }
-
-    @Override
-    double inverseOperation2(double offset, double value) {
-        return value / offset;
     }
 }
