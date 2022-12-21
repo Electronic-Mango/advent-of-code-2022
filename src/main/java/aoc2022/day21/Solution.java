@@ -11,6 +11,7 @@ import java.util.Map;
 public final class Solution {
     private static final String ROOT = "root";
     private static final String HUMAN = "humn";
+    private static final String VAR = "x";
 
     public static void main(String[] args) {
         final var input = StreamEx.of(InputLoader.readLines("day21"))
@@ -19,14 +20,15 @@ public final class Solution {
                 .toMap();
 
         final var equation1 = expand(input, ROOT);
-        final var result1 = new Expression(equation1).calculate();
+        final var result1 = (long) new Expression(equation1).calculate();
         System.out.println(result1);
 
-        input.computeIfPresent(ROOT, (key, value) -> value.replaceAll("[+\\-*/]", "="));
-        input.computeIfPresent(HUMAN, (key, value) -> "x");
+        input.computeIfPresent(ROOT, (name, definition) -> definition.replaceAll("[+\\-*/]", "-"));
+        input.computeIfPresent(HUMAN, (name, definition) -> VAR);
         final var equation2 = expand(input, ROOT);
-        System.out.println(equation2);
-        // Solving the final equation is left as an exercise for the reader.
+        final var solveString = String.format("solve(%s,%s,%d,%d)", equation2, VAR, Long.MIN_VALUE, Long.MAX_VALUE);
+        final var result2 = (long) new Expression(solveString).calculate();
+        System.out.println(result2);
     }
 
     private static String expand(final Map<String, String> input, final String start) {
@@ -36,8 +38,8 @@ public final class Solution {
         }
         final var operationElements = StreamEx.split(value, " ").toListAndThen(Triplet::fromCollection);
         final var monkey1 = operationElements.getValue0();
-        final var monkey2 = operationElements.getValue2();
         final var operation = operationElements.getValue1();
+        final var monkey2 = operationElements.getValue2();
         return String.format("(%s%s%s)", expand(input, monkey1), operation, expand(input, monkey2));
     }
 }
