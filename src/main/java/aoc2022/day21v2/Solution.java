@@ -4,12 +4,11 @@ import aoc2022.input.InputLoader;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 
@@ -17,51 +16,44 @@ public final class Solution {
     private static final String ROOT = "root";
     private static final String HUMAN = "humn";
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var definitions = StreamEx.of(InputLoader.readLines("day21"))
                 .map(line -> StreamEx.split(line, ": ").toListAndThen(Pair::fromCollection))
                 .mapToEntry(Pair::getValue0, Pair::getValue1)
                 .toMap();
-        final var nodeMap = EntryStream.of(definitions).mapToValue(Solution::parseWithoutBranches).toMap();
-        nodeMap.values()
-                .stream()
-                .filter(Operation.class::isInstance)
-                .map(Operation.class::cast)
-                .forEach(node -> addBranches(node, definitions, nodeMap));
-        final var root = (Operation) nodeMap.get(ROOT);
 
-        final var result1 = root.getValue();
+        final var root1 = parseNode(ROOT, definitions);
+        final var result1 = root1.getValue();
         System.out.println((long) result1);
 
-        final var human = (Value) nodeMap.get(HUMAN);
-        human.setValue(Double.NaN);
-        final var branch1 = root.getBranch1();
-        final var branch2 = root.getBranch2();
+        definitions.compute(HUMAN, (id, value) -> String.valueOf(Double.NaN));
+        final var root2 = (OperationNode) parseNode(ROOT, definitions);
+        final var branch1 = root2.getBranch1();
+        final var branch2 = root2.getBranch2();
         final var result2 = branch1.hasX() ? branch1.getX(branch2.getValue()) : branch2.getX(branch1.getValue());
         System.out.println((long) result2);
     }
 
-    private static Node parseWithoutBranches(final String id, final String definition) {
+    private static Node parseNode(final String id, final Map<String, String> definitions) {
+        final var definition = definitions.get(id);
         if (!definition.contains(" ")) {
-            return new Value(id, Double.parseDouble(definition));
+            return new ValueNode(id, Double.parseDouble(definition));
         }
-        final var operation = StreamEx.split(definition, " ").toList().get(1);
-        return switch (operation) {
-            case "+" -> new Operation(id, (v1, v2) -> v1 + v2, (o, v) -> o - v, (o, v) -> o - v);
-            case "-" -> new Operation(id, (v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o);
-            case "*" -> new Operation(id, (v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v);
-            case "/" -> new Operation(id, (v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o);
-            default -> null;
-        };
+        final var parameters = StreamEx.split(definition, " ").toListAndThen(Triplet::fromCollection);
+        final var branch1 = parseNode(parameters.getValue0(), definitions);
+        final var branch2 = parseNode(parameters.getValue2(), definitions);
+        final var operations = operations(parameters.getValue1());
+        return new OperationNode(id, operations.get(0), operations.get(1), operations.get(2), branch1, branch2);
     }
 
-    private static void addBranches(final Operation node,
-                                    final Map<String, String> definitions,
-                                    final Map<String, Node> nodes) {
-        final var operation = definitions.get(node.getId());
-        final var operationElements = StreamEx.split(operation, " ").toListAndThen(Triplet::fromCollection);
-        node.setBranch1(nodes.get(operationElements.getValue0()));
-        node.setBranch2(nodes.get(operationElements.getValue2()));
+    private static List<DoubleBinaryOperator> operations(final String operation) {
+        return switch (operation) {
+            case "+" -> List.of((v1, v2) -> v1 + v2, (o, v) -> o - v, (o, v) -> o - v);
+            case "-" -> List.of((v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o);
+            case "*" -> List.of((v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v);
+            case "/" -> List.of((v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o);
+            default -> null;
+        };
     }
 }
 
@@ -78,11 +70,10 @@ abstract class Node {
 }
 
 @Getter(AccessLevel.PACKAGE)
-@Setter(AccessLevel.PACKAGE)
-final class Value extends Node {
-    private double value;
+final class ValueNode extends Node {
+    private final double value;
 
-    Value(final String id, final double value) {
+    ValueNode(final String id, final double value) {
         super(id);
         this.value = value;
     }
@@ -99,22 +90,25 @@ final class Value extends Node {
 }
 
 @Getter(AccessLevel.PACKAGE)
-@Setter(AccessLevel.PACKAGE)
-final class Operation extends Node {
+final class OperationNode extends Node {
     private final DoubleBinaryOperator operation;
     private final DoubleBinaryOperator inverseLeft;
     private final DoubleBinaryOperator inverseRight;
-    private Node branch1;
-    private Node branch2;
+    private final Node branch1;
+    private final Node branch2;
 
-    Operation(final String id,
-              final DoubleBinaryOperator operation,
-              final DoubleBinaryOperator inverseLeft,
-              final DoubleBinaryOperator inverseRight) {
+    OperationNode(final String id,
+                  final DoubleBinaryOperator operation,
+                  final DoubleBinaryOperator inverseLeft,
+                  final DoubleBinaryOperator inverseRight,
+                  final Node branch1,
+                  final Node branch2) {
         super(id);
         this.operation = operation;
         this.inverseLeft = inverseLeft;
         this.inverseRight = inverseRight;
+        this.branch1 = branch1;
+        this.branch2 = branch2;
     }
 
     @Override
