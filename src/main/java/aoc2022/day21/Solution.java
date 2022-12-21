@@ -13,7 +13,7 @@ public final class Solution {
     private static final String HUMAN = "humn";
     private static final String VAR = "x";
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var input = StreamEx.of(InputLoader.readLines("day21"))
                 .map(line -> StreamEx.split(line, ": ").toListAndThen(Pair::fromCollection))
                 .mapToEntry(Pair::getValue0, Pair::getValue1)

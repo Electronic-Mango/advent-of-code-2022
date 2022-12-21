@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public final class Solution {
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var input = InputLoader.readLines("day20").stream().map(Integer::parseInt).toList();
 
         final var result1 = solve(input, 1L, 1);

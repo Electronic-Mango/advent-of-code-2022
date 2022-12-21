@@ -24,7 +24,7 @@ public final class Solution {
     private static final int MINUTES_ALONE = 30;
     private static final int MINUTES_TOGETHER = 26;
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         VALVE_PATTERN.matcher(InputLoader.read("day16")).results().forEach(match -> {
             RATES.put(match.group(1), NumberUtils.toInt(match.group(2)));
             StreamEx.split(match.group(3), ", ").forEach(next -> DISTANCES.put(match.group(1), next, 1));

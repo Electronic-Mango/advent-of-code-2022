@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public final class Solution {
     private static final int CUBE_SIDES = 6;
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var allCubes = InputLoader.readLines("day18")
                 .stream()
                 .map(line -> StreamEx.split(line, ",").map(Integer::parseInt).toList())

@@ -11,7 +11,7 @@ import org.json.JSONArray;
 import java.util.Set;
 
 public final class Solution {
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var input = InputLoader.read("day13");
         final var packets = StreamEx.split(input, System.lineSeparator() + System.lineSeparator())
                 .map(packetPair -> packetPair.lines().map(JSONArray::new).toList())

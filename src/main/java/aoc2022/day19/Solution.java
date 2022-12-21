@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Solution {
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final var input = InputLoader.readLines("day19", "input").stream()
                 .map(Blueprint::new)
                 .toList();
