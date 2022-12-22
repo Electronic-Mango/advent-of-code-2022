@@ -2,16 +2,22 @@ package aoc2022.day22;
 
 import aoc2022.input.InputLoader;
 import com.google.common.primitives.Chars;
-import lombok.Data;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import one.util.streamex.EntryStream;
+import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.function.TriFunction;
 import org.javatuples.Pair;
 
 import java.awt.Point;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
@@ -28,57 +34,60 @@ public final class Solution {
         final var map = parseMap(input.getValue0());
         final var commands = COMMANDS_PATTERN.matcher(input.getValue1()).results().map(MatchResult::group).toList();
 
-        final int result1 = move(map, commands, Solution::wrap);
+        final int result1 = move(map, commands, Solution::wrapFlat);
         System.out.println(result1);
 
         final int result2 = move(map, commands, Solution::wrapCube);
         System.out.println(result2);
     }
 
-    private static Map<Point, Tile> parseMap(final String map) {
+    private static Map<Point, Boolean> parseMap(final String map) {
         return EntryStream.of(map.split(System.lineSeparator()))
                 .flatMapKeyValue((y, line) -> EntryStream.of(Chars.asList(line.toCharArray()))
                         .filterValues(c -> c != ' ')
                         .mapKeys(x -> new Point(x, y)))
                 .mapToEntry(Map.Entry::getKey, Map.Entry::getValue)
-                .mapValues(tile -> tile == '.' ? Tile.OPEN : Tile.WALL)
+                .mapValues(tile -> tile == '.')
                 .toMap();
     }
 
-    private static int move(final Map<Point, Tile> map,
-                            final List<String> commands,
-                            final TriFunction<Point, Direction, Map<Point, Tile>, Wrapped> wrapper) {
-        var position = getStartingPoint(map);
-        var direction = Direction.RIGHT;
-        for (final var command : commands) {
-            if (!StringUtils.isNumeric(command)) {
-                direction = turn(direction, command);
-                continue;
-            }
-            final var steps = Integer.parseInt(command);
-            for (int i = 0; i < steps; ++i) {
-                final var nextPosition = nextPoint(position, direction);
-                if (map.getOrDefault(nextPosition, Tile.WALL) == Tile.OPEN) {
-                    position = nextPosition;
-                    continue;
-                }
-                if (map.get(nextPosition) != null && map.get(nextPosition) == Tile.WALL) {
-                    break;
-                }
-                final var wrappedPoint = wrapper.apply(position, direction, map);
-                if (map.getOrDefault(wrappedPoint.getPoint(), Tile.WALL) == Tile.WALL) {
-                    break;
-                }
-                position = wrappedPoint.getPoint();
-                direction = wrappedPoint.getDirection();
-            }
-        }
-        return ((position.y + 1) * 1000) + ((position.x + 1) * 4) + (direction.ordinal());
+    private static int move(final Map<Point, Boolean> map, final List<String> commands, final Wrapper wrapper) {
+        final var state = new State(getStartingPoint(map), Direction.RIGHT);
+        commands.forEach(command -> nextMove(state, command, map, wrapper));
+        return ((state.getPoint().y + 1) * 1000) + ((state.getPoint().x + 1) * 4) + (state.getDirection().ordinal());
     }
 
-    private static Point getStartingPoint(final Map<Point, Tile> points) {
+    private static void nextMove(final State state,
+                                 final String command,
+                                 final Map<Point, Boolean> map,
+                                 final Wrapper wrapper) {
+        if (StringUtils.isNumeric(command)) {
+            IntStreamEx.range(Integer.parseInt(command)).forEach(i -> stepForward(state, map, wrapper));
+        } else {
+            state.setDirection(turn(state.getDirection(), command));
+        }
+    }
+
+    private static void stepForward(final State state, final Map<Point, Boolean> map, final Wrapper wrapper) {
+        final var point = state.getPoint();
+        final var nextPoint = new Point(point.x + state.getDirection().dx, point.y + state.getDirection().dy);
+        if (map.getOrDefault(nextPoint, false)) {
+            state.setPoint(nextPoint);
+        } else if (map.getOrDefault(nextPoint, true)) {
+            wrap(state, map, wrapper);
+        }
+    }
+
+    private static void wrap(final State state, final Map<Point, Boolean> map, final Wrapper wrapper) {
+        final var wrappedState = wrapper.wrap(state, map.keySet());
+        if (map.getOrDefault(wrappedState.getPoint(), false)) {
+            state.set(wrappedState);
+        }
+    }
+
+    private static Point getStartingPoint(final Map<Point, Boolean> points) {
         return EntryStream.of(points)
-                .filterValues(tile -> tile.equals(Tile.OPEN))
+                .filterValues(Boolean::booleanValue)
                 .keys()
                 .sortedByDouble(Point::getX)
                 .sortedByDouble(Point::getY)
@@ -91,73 +100,76 @@ public final class Solution {
         return Direction.values()[Math.floorMod(current.ordinal() + turn, Direction.values().length)];
     }
 
-    private static Point nextPoint(final Point point, final Direction direction) {
-        return switch (direction) {
-            case RIGHT -> new Point(point.x + 1, point.y);
-            case UP -> new Point(point.x, point.y - 1);
-            case DOWN -> new Point(point.x, point.y + 1);
-            case LEFT -> new Point(point.x - 1, point.y);
+    private static State wrapFlat(final State state, final Set<Point> points) {
+        final var wrappedPoint = switch (state.getDirection()) {
+            case UP -> StreamEx.of(points).filter(p -> p.x == state.getPoint().x).maxByInt(e -> e.y).orElseThrow();
+            case DOWN -> StreamEx.of(points).filter(p -> p.x == state.getPoint().x).minByInt(e -> e.y).orElseThrow();
+            case RIGHT -> StreamEx.of(points).filter(p -> p.y == state.getPoint().y).minByInt(e -> e.x).orElseThrow();
+            case LEFT -> StreamEx.of(points).filter(p -> p.y == state.getPoint().y).maxByInt(e -> e.x).orElseThrow();
         };
+        return new State(wrappedPoint, state.getDirection());
     }
 
-    private static Wrapped wrap(final Point next, final Direction direction, final Map<Point, Tile> map) {
-        final var wrappedPoint = switch (direction) {
-            case UP -> EntryStream.of(map).keys().filter(p -> p.x == next.x).maxByInt(e -> e.y).orElseThrow();
-            case DOWN -> EntryStream.of(map).keys().filter(p -> p.x == next.x).minByInt(e -> e.y).orElseThrow();
-            case RIGHT -> EntryStream.of(map).keys().filter(p -> p.y == next.y).minByInt(e -> e.x).orElseThrow();
-            case LEFT -> EntryStream.of(map).keys().filter(p -> p.y == next.y).maxByInt(e -> e.x).orElseThrow();
-        };
-        return new Wrapped(wrappedPoint.x, wrappedPoint.y, direction);
-    }
-
-    private static Wrapped wrapCube(final Point position, final Direction direction, final Map<Point, Tile> map) {
+    private static State wrapCube(final State state, final Set<Point> points) {
+        final var position = state.getPoint();
+        final var direction = state.getDirection();
         final var side = SIDES.indexOf(Pair.with(position.x / SIDE_SIZE, position.y / SIDE_SIZE));
         return switch (direction) {
             case UP -> switch (side) {
-                case 0 -> new Wrapped(0, (SIDE_SIZE * 2) + position.x, Direction.RIGHT);
-                case 1 -> new Wrapped(position.x - (SIDE_SIZE * 2), (SIDE_SIZE * 4) - 1, Direction.UP);
-                case 4 -> new Wrapped(SIDE_SIZE, SIDE_SIZE + position.x, Direction.RIGHT);
-                default -> null;
+                case 0 -> new State(0, (SIDE_SIZE * 2) + position.x, Direction.RIGHT);
+                case 1 -> new State(position.x - (SIDE_SIZE * 2), (SIDE_SIZE * 4) - 1, Direction.UP);
+                case 4 -> new State(SIDE_SIZE, SIDE_SIZE + position.x, Direction.RIGHT);
+                default -> throw new IllegalArgumentException("Invalid state for wrapping " + state);
             };
             case DOWN -> switch (side) {
-                case 1 -> new Wrapped((SIDE_SIZE * 2) - 1, position.x - SIDE_SIZE, Direction.LEFT);
-                case 3 -> new Wrapped(SIDE_SIZE - 1, (SIDE_SIZE * 2) + position.x, Direction.LEFT);
-                case 5 -> new Wrapped(position.x + (SIDE_SIZE * 2), 0, Direction.DOWN);
-                default -> null;
+                case 1 -> new State((SIDE_SIZE * 2) - 1, position.x - SIDE_SIZE, Direction.LEFT);
+                case 3 -> new State(SIDE_SIZE - 1, (SIDE_SIZE * 2) + position.x, Direction.LEFT);
+                case 5 -> new State(position.x + (SIDE_SIZE * 2), 0, Direction.DOWN);
+                default -> throw new IllegalArgumentException("Invalid state for wrapping " + state);
             };
             case RIGHT -> switch (side) {
-                case 1 -> new Wrapped((SIDE_SIZE * 2) - 1, (SIDE_SIZE * 3) - position.y - 1, Direction.LEFT);
-                case 2 -> new Wrapped(position.y + SIDE_SIZE, SIDE_SIZE - 1, Direction.UP);
-                case 3 -> new Wrapped((SIDE_SIZE * 3) - 1, (SIDE_SIZE * 3) - position.y - 1, Direction.LEFT);
-                case 5 -> new Wrapped(position.y - (SIDE_SIZE * 2), (SIDE_SIZE * 3) - 1, Direction.UP);
-                default -> null;
+                case 1 -> new State((SIDE_SIZE * 2) - 1, (SIDE_SIZE * 3) - position.y - 1, Direction.LEFT);
+                case 2 -> new State(position.y + SIDE_SIZE, SIDE_SIZE - 1, Direction.UP);
+                case 3 -> new State((SIDE_SIZE * 3) - 1, (SIDE_SIZE * 3) - position.y - 1, Direction.LEFT);
+                case 5 -> new State(position.y - (SIDE_SIZE * 2), (SIDE_SIZE * 3) - 1, Direction.UP);
+                default -> throw new IllegalArgumentException("Invalid state for wrapping " + state);
             };
             case LEFT -> switch (side) {
-                case 0 -> new Wrapped(0, (SIDE_SIZE * 3) - position.y - 1, Direction.RIGHT);
-                case 2 -> new Wrapped(position.y - SIDE_SIZE, SIDE_SIZE * 2, Direction.DOWN);
-                case 4 -> new Wrapped(SIDE_SIZE, (SIDE_SIZE * 3) - position.y - 1, Direction.RIGHT);
-                case 5 -> new Wrapped(position.y - (SIDE_SIZE * 2), 0, Direction.DOWN);
-                default -> null;
+                case 0 -> new State(0, (SIDE_SIZE * 3) - position.y - 1, Direction.RIGHT);
+                case 2 -> new State(position.y - SIDE_SIZE, SIDE_SIZE * 2, Direction.DOWN);
+                case 4 -> new State(SIDE_SIZE, (SIDE_SIZE * 3) - position.y - 1, Direction.RIGHT);
+                case 5 -> new State(position.y - (SIDE_SIZE * 2), 0, Direction.DOWN);
+                default -> throw new IllegalArgumentException("Invalid state for wrapping " + state);
             };
         };
     }
 
-    private enum Tile {
-        OPEN, WALL
-    }
-
+    @RequiredArgsConstructor
     private enum Direction {
-        RIGHT, DOWN, LEFT, UP
+        RIGHT(1, 0), DOWN(0, 1), LEFT(-1, 0), UP(0, -1);
+        private final int dx;
+        private final int dy;
     }
 
-    @Data
-    private static final class Wrapped {
-        private final Point point;
-        private final Direction direction;
+    private interface Wrapper {
+        State wrap(final State state, final Set<Point> points);
+    }
 
-        public Wrapped(final int x, final int y, final Direction direction) {
-            this.point = new Point(x, y);
-            this.direction = direction;
+    @Getter(AccessLevel.PRIVATE)
+    @Setter(AccessLevel.PRIVATE)
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @ToString
+    private static final class State {
+        private Point point;
+        private Direction direction;
+
+        State(final int x, final int y, final Direction direction) {
+            this(new Point(x, y), direction);
+        }
+
+        void set(final State state) {
+            this.point = state.point;
+            this.direction = state.direction;
         }
     }
 }
