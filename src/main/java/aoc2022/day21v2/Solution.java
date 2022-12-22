@@ -42,16 +42,12 @@ public final class Solution {
         final var parameters = StreamEx.split(definition, " ").toListAndThen(Triplet::fromCollection);
         final var branch1 = parseNode(parameters.getValue0(), definitions);
         final var branch2 = parseNode(parameters.getValue2(), definitions);
-        final var operations = operations(parameters.getValue1());
-        return new OperationNode(id, operations.get(0), operations.get(1), operations.get(2), branch1, branch2);
-    }
-
-    private static List<DoubleBinaryOperator> operations(final String operation) {
+        final var operation = parameters.getValue1();
         return switch (operation) {
-            case "+" -> List.of((v1, v2) -> v1 + v2, (o, v) -> o - v, (o, v) -> o - v);
-            case "-" -> List.of((v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o);
-            case "*" -> List.of((v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v);
-            case "/" -> List.of((v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o);
+            case "+" -> new OperationNode(id, (v1, v2) -> v1 + v2, (o, v) -> o - v, (o, v) -> o - v, branch1, branch2);
+            case "-" -> new OperationNode(id, (v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o, branch1, branch2);
+            case "*" -> new OperationNode(id, (v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v, branch1, branch2);
+            case "/" -> new OperationNode(id, (v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o, branch1, branch2);
             default -> null;
         };
     }
