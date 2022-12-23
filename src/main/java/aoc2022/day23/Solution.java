@@ -43,11 +43,9 @@ public final class Solution {
 
     private static int part1(final Set<Point> elves, final List<Move> moves) {
         IntStreamEx.range(10).forEach(iteration -> move(elves, moves));
-        final var minX = StreamEx.of(elves).minBy(Point::getX).orElseThrow().x;
-        final var maxX = StreamEx.of(elves).maxBy(Point::getX).orElseThrow().x;
-        final var minY = StreamEx.of(elves).minBy(Point::getY).orElseThrow().y;
-        final var maxY = StreamEx.of(elves).maxBy(Point::getY).orElseThrow().y;
-        return (Math.abs(maxX - minX + 1) * Math.abs(maxY - minY + 1)) - elves.size();
+        final var x = elves.stream().mapToInt(elf -> elf.x).summaryStatistics();
+        final var y = elves.stream().mapToInt(elf -> elf.y).summaryStatistics();
+        return (x.getMax() - x.getMin() + 1) * (y.getMax() - y.getMin() + 1) - elves.size();
     }
 
     private static int part2(final Set<Point> elves, final List<Move> moves) {
