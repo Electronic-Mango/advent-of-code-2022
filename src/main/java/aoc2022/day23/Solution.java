@@ -12,26 +12,32 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public final class Solution {
-    private static final Set<Point> ADJACENT = Set.of(new Point(-1, -1), new Point(0, -1), new Point(1, -1),
-            new Point(-1, 0), new Point(1, 0), new Point(-1, 1), new Point(0, 1), new Point(1, 1));
-    private static final List<Move> MOVES = List.of(new Move(Direction.NORTH, 0, -1), new Move(Direction.SOUTH, 0, 1),
-            new Move(Direction.WEST, -1, 0), new Move(Direction.EAST, 1, 0));
-    private static final Move STILL = new Move(null, 0, 0);
+    private static final Set<Translation> DELTAS = Set.of(
+            new Translation(-1, -1), new Translation(0, -1), new Translation(1, -1),
+            new Translation(-1, 0), new Translation(1, 0),
+            new Translation(-1, 1), new Translation(0, 1), new Translation(1, 1));
+    private static final List<Move> POSSIBLE_MOVES = List.of(
+            new Move(new Translation(0, -1), (current, adjacent) -> adjacent.y != current.y - 1),  // north
+            new Move(new Translation(0, 1), (current, adjacent) -> adjacent.y != current.y + 1),   // south
+            new Move(new Translation(-1, 0), (current, adjacent) -> adjacent.x != current.x - 1),  // west
+            new Move(new Translation(1, 0), (current, adjacent) -> adjacent.x != current.x + 1));  // east
+    private static final Translation STILL = new Translation(0, 0);
 
     public static void main(final String[] args) {
-        final var elves = EntryStream.of(InputLoader.readLines("day23"))
+        final var elves = EntryStream.of(InputLoader.readLines("day23", "input"))
                 .flatMapValues(line -> EntryStream.of(line.chars().boxed().toList()).filterValues(c -> c == '#').keys())
                 .mapKeyValue((y, x) -> new Point(x, y))
                 .toSet();
 
-        final var result1 = part1(Sets.newHashSet(elves), Lists.newArrayList(MOVES));
+        final var result1 = part1(Sets.newHashSet(elves), Lists.newArrayList(POSSIBLE_MOVES));
         System.out.println(result1);
 
-        final var result2 = part2(Sets.newHashSet(elves), Lists.newArrayList(MOVES));
+        final var result2 = part2(Sets.newHashSet(elves), Lists.newArrayList(POSSIBLE_MOVES));
         System.out.println(result2);
     }
 
@@ -66,30 +72,24 @@ public final class Solution {
     private static Map<Point, List<Point>> nextMoves(final Set<Point> elves, final List<Move> moves) {
         return StreamEx.of(elves)
                 .mapToEntry(Function.identity(), Function.identity())
-                .mapKeys(elf -> StreamEx.of(ADJACENT)
-                        .map(adjacent -> new Point(elf.x + adjacent.x, elf.y + adjacent.y))
-                        .filter(elves::contains)
-                        .toSet())
-                .mapToKey(Solution::emptySides)
-                .mapKeys(side -> side.size() == moves.size() ? STILL : StreamEx.of(moves)
-                        .filter(move -> side.contains(move.direction))
-                        .findFirst()
-                        .orElse(STILL))
-                .mapToKey((next, current) -> new Point(current.x + next.dx, current.y + next.dy))
+                .mapKeys(elf -> getAdjacent(elf, elves))
+                .mapToKey((adjacent, current) -> getMove(adjacent, current, moves))
+                .mapToKey((translation, current) -> new Point(current.x + translation.dx, current.y + translation.dy))
                 .grouping();
     }
 
-    private static Set<Direction> emptySides(final Set<Point> adjacent, final Point current) {
-        final var directionMap = Map.of(
-                Direction.NORTH, adjacent.stream().noneMatch(p -> p.y == current.y - 1),
-                Direction.SOUTH, adjacent.stream().noneMatch(p -> p.y == current.y + 1),
-                Direction.WEST, adjacent.stream().noneMatch(p -> p.x == current.x - 1),
-                Direction.EAST, adjacent.stream().noneMatch(p -> p.x == current.x + 1)
-        );
-        return EntryStream.of(directionMap).filterValues(Boolean::booleanValue).keys().toSet();
+    private static Set<Point> getAdjacent(final Point elf, final Set<Point> elves) {
+        return StreamEx.of(DELTAS).map(d -> new Point(elf.x + d.dx, elf.y + d.dy)).filter(elves::contains).toSet();
     }
 
-    private enum Direction {NORTH, SOUTH, WEST, EAST}
+    private static Translation getMove(final Set<Point> allAdjacent, final Point current, final List<Move> moves) {
+        return allAdjacent.isEmpty() ? STILL : StreamEx.of(moves)
+                .findFirst(move -> StreamEx.of(allAdjacent).allMatch(adjacent -> move.fits.test(current, adjacent)))
+                .map(Move::translation)
+                .orElse(STILL);
+    }
 
-    private record Move(Direction direction, int dx, int dy) {}
+    private record Move(Translation translation, BiPredicate<Point, Point> fits) { }
+
+    private record Translation(int dx, int dy) { }
 }
