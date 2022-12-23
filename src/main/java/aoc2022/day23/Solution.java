@@ -29,7 +29,7 @@ public final class Solution {
     private static final Translation STILL = new Translation(0, 0);
 
     public static void main(final String[] args) {
-        final var elves = EntryStream.of(InputLoader.readLines("day23", "input"))
+        final var elves = EntryStream.of(InputLoader.readLines("day23"))
                 .flatMapValues(line -> EntryStream.of(line.chars().boxed().toList()).filterValues(c -> c == '#').keys())
                 .mapKeyValue((y, x) -> new Point(x, y))
                 .toSet();
