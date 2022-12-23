@@ -8,7 +8,6 @@ import one.util.streamex.StreamEx;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleBinaryOperator;
 
@@ -48,7 +47,7 @@ public final class Solution {
             case "-" -> new OperationNode(id, (v1, v2) -> v1 - v2, (o, v) -> o + v, (o, v) -> v - o, branch1, branch2);
             case "*" -> new OperationNode(id, (v1, v2) -> v1 * v2, (o, v) -> o / v, (o, v) -> o / v, branch1, branch2);
             case "/" -> new OperationNode(id, (v1, v2) -> v1 / v2, (o, v) -> o * v, (o, v) -> v - o, branch1, branch2);
-            default -> null;
+            default -> throw new IllegalArgumentException(String.format("Unexpected operation '%s'!", operation));
         };
     }
 }
