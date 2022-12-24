@@ -8,6 +8,8 @@ import one.util.streamex.IntStreamEx;
 import one.util.streamex.StreamEx;
 
 import java.awt.Point;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,16 +31,15 @@ public final class Solution {
         final var map = prepareMap(input, y);
         final var start = new Point(0, -1);
         final var end = new Point(x, y + 1);
-        final var moves = preparePossibleMoves(x, y, start, end);
 
-        final var result1 = move(start, end, map, moves, x, y);
+        final var result1 = move(start, end, map, x, y);
         System.out.println(result1);
 
-        final var result2 = result1 + move(end, start, map, moves, x, y) + move(start, end, map, moves, x, y);
+        final var result2 = result1 + move(end, start, map, x, y) + move(start, end, map, x, y);
         System.out.println(result2);
     }
 
-    private static Map<Character, List<Point>> prepareMap(final List<String> input, final int rows) {
+    private static BlizzardsMap prepareMap(final List<String> input, final int rows) {
         return EntryStream.of(input)
                 .skip(1)
                 .limit(rows + 1)
@@ -48,7 +49,7 @@ public final class Solution {
                 .mapValues(Map.Entry::getValue)
                 .mapKeyValue(Map::entry)
                 .mapToEntry(Map.Entry::getValue, Map.Entry::getKey)
-                .grouping();
+                .grouping(BlizzardsMap::new);
     }
 
     private static Set<Point> preparePossibleMoves(final int x, final int y, final Point start, final Point end) {
@@ -61,37 +62,35 @@ public final class Solution {
                 .toSet();
     }
 
-    private static int move(final Point start,
-                            final Point end,
-                            final Map<Character, List<Point>> map,
-                            final Set<Point> allMoves,
-                            final int x,
-                            final int y) {
-        int i = 0;
-        Set<Point> states = Sets.newHashSet(start);
-        while (states.stream().noneMatch(e -> e.equals(end))) {
-            i++;
+    private static int move(final Point start, final Point end, final BlizzardsMap map, final int x, final int y) {
+        final var moves = preparePossibleMoves(x, y, start, end);
+        var states = Sets.newHashSet(start);
+        var i = 0;
+        while (states.stream().noneMatch(position -> position.equals(end))) {
             map.forEach((type, positions) -> moveBlizzard(type, positions, x, y));
-            states = getStates(StreamEx.of(map.values()).flatMap(List::stream).toSet(), allMoves, states);
+            states = getStates(StreamEx.of(map.values()).flatMap(List::stream).toSet(), moves, states);
+            i++;
         }
         return i;
     }
 
-    private static Set<Point> getStates(final Set<Point> blizzards, final Set<Point> moves, final Set<Point> states) {
-        final var currentMoves = Sets.difference(moves, blizzards);
-        return StreamEx.of(states).flatMap(state -> nextMoves(state, currentMoves)).toSet();
+    private static HashSet<Point> getStates(final Set<Point> taken, final Set<Point> moves, final Set<Point> states) {
+        final var currentMoves = Sets.difference(moves, taken);
+        return StreamEx.of(states).flatMap(state -> nextMoves(state, currentMoves)).toSetAndThen(HashSet::new);
     }
 
-    private static void moveBlizzard(final char type, final List<Point> blizzards, final int x, final int y) {
+    private static void moveBlizzard(final char type, final List<Point> positions, final int x, final int y) {
         switch (type) {
-            case '^' -> blizzards.forEach(p -> p.translate(0, p.y > 0 ? -1 : y));
-            case 'v' -> blizzards.forEach(p -> p.translate(0, p.y < y ? 1 : -y));
-            case '<' -> blizzards.forEach(p -> p.translate(p.x > 0 ? -1 : x, 0));
-            case '>' -> blizzards.forEach(p -> p.translate(p.x < x ? 1 : -x, 0));
+            case '^' -> positions.forEach(position -> position.translate(0, position.y > 0 ? -1 : y));
+            case 'v' -> positions.forEach(position -> position.translate(0, position.y < y ? 1 : -y));
+            case '<' -> positions.forEach(position -> position.translate(position.x > 0 ? -1 : x, 0));
+            case '>' -> positions.forEach(position -> position.translate(position.x < x ? 1 : -x, 0));
         }
     }
 
     private static Stream<Point> nextMoves(final Point state, final Set<Point> moves) {
         return StreamEx.of(DELTAS).map(d -> new Point(d.x + state.x, d.y + state.y)).filter(moves::contains);
     }
+
+    private static final class BlizzardsMap extends HashMap<Character, List<Point>> { }
 }
