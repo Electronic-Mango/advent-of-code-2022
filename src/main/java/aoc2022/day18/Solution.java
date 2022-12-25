@@ -10,7 +10,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collector;
@@ -26,6 +25,7 @@ public final class Solution {
                 .collect(Cube.collector());
 
         System.out.println(part1(allCubes));
+
         System.out.println(part2(allCubes));
     }
 
@@ -40,17 +40,17 @@ public final class Solution {
         final var maxX = getMaxCoordinate(all, Cube::x);
         final var maxY = getMaxCoordinate(all, Cube::y);
         final var maxZ = getMaxCoordinate(all, Cube::z);
-        final var flooded = new LinkedList<Cube>();
-        flooded.add(new Cube(0, 0, 0));
         final var checked = new HashSet<Cube>();
+        final var flood = new LinkedList<Cube>();
+        flood.add(new Cube(0, 0, 0));
         var exposedExternalFaces = 0L;
-        while (!flooded.isEmpty()) {
-            final var floodCube = flooded.pop();
+        while (!flood.isEmpty()) {
+            final var floodCube = flood.pop();
             checked.add(floodCube);
             final var adjacent = floodCube.adjacent().stream().filter(validFloodCube(maxX, maxY, maxZ)).toList();
             adjacent.stream()
-                    .filter(cube -> Stream.of(all, flooded, checked).noneMatch(collection -> collection.contains(cube)))
-                    .forEach(flooded::add);
+                    .filter(cube -> Stream.of(all, flood, checked).noneMatch(collection -> collection.contains(cube)))
+                    .forEach(flood::add);
             exposedExternalFaces += adjacent.stream().filter(all::contains).count();
         }
         return exposedExternalFaces;
@@ -61,8 +61,11 @@ public final class Solution {
     }
 
     private static Predicate<Cube> validFloodCube(final int x, final int y, final int z) {
-        final BiFunction<Integer, Integer, Boolean> valid = (coordinate, max) -> coordinate >= -1 && coordinate <= max;
-        return cube -> valid.apply(cube.x(), x) && valid.apply(cube.y(), y) && valid.apply(cube.z(), z);
+        return cube -> valid(cube.x(), x) && valid(cube.y(), y) && valid(cube.z(), z);
+    }
+
+    private static boolean valid(final int coordinate, final int max) {
+        return coordinate >= -1 && coordinate <= max;
     }
 }
 
