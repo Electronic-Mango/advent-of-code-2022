@@ -47,8 +47,7 @@ public final class Solution {
                 .flatMapValues(line -> EntryStream.of(Chars.asList(line.toCharArray())).filterValues(c -> c >= '<'))
                 .mapToKey((y, entry) -> new Point(entry.getKey(), y - 1))
                 .mapValues(Map.Entry::getValue)
-                .mapKeyValue(Map::entry)
-                .mapToEntry(Map.Entry::getValue, Map.Entry::getKey)
+                .invert()
                 .grouping(BlizzardsMap::new);
     }
 
