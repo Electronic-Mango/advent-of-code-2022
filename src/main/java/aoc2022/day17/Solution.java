@@ -2,6 +2,7 @@ package aoc2022.day17;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
+import lombok.AccessLevel;
 import lombok.Getter;
 import one.util.streamex.IntStreamEx;
 import one.util.streamex.LongStreamEx;
@@ -29,35 +30,34 @@ public final class Solution {
 
     public static void main(String[] args) {
         final var directions = Iterables.cycle(InputLoader.read("day17").chars().boxed().toList()).iterator();
-        final var board = new Board();
-        board.add(new Shape(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0));
+        final var chamber = new Chamber();
+        chamber.add(new Shape(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0));
 
-        part1(directions, board, ITERATIONS_1);
-        var result1 = board.top();
+        part1(directions, chamber, ITERATIONS_1);
+        var result1 = chamber.top();
         System.out.println(result1);
 
-        final var cycle = part2(directions, board);
+        final var cycle = part2(directions, chamber);
         final var repeating = ITERATIONS_2 - ITERATIONS_1;
         final var cycleCount = (repeating / cycle.getShapes().size());
-        final var remaining = repeating % cycleCount;
-        part1(directions, board, remaining);
-        final var result2 = board.top() + ((cycleCount - 2) * (cycle.top() - cycle.bottom()));
+        part1(directions, chamber, repeating % cycleCount);
+        final var result2 = chamber.top() + ((cycleCount - 2) * (cycle.top() - cycle.bottom()));
         System.out.println(result2);
     }
 
-    private static void part1(final Iterator<Integer> directions, final Board board, final long iterations) {
-        LongStreamEx.range(iterations).mapToObj(i -> fall(directions, board.getPoints())).forEach(board::add);
+    private static void part1(final Iterator<Integer> directions, final Chamber chamber, final long iterations) {
+        LongStreamEx.range(iterations).mapToObj(i -> fall(directions, chamber.getPoints())).forEach(chamber::add);
     }
 
-    private static Board part2(final Iterator<Integer> direction, final Board board) {
-        final var cycle1 = new Board();
-        final var cycle2 = new Board();
-        final var firstShape = fall(direction, board.getPoints());
-        board.add(firstShape);
+    private static Chamber part2(final Iterator<Integer> direction, final Chamber chamber) {
+        final var cycle1 = new Chamber();
+        final var cycle2 = new Chamber();
+        final var firstShape = fall(direction, chamber.getPoints());
+        chamber.add(firstShape);
         cycle1.add(firstShape);
-        while (!Solution.cycle(cycle1, cycle2)) {
-            final var shape = fall(direction, board.getPoints());
-            board.add(shape);
+        while (!Solution.equalCycles(cycle1, cycle2)) {
+            final var shape = fall(direction, chamber.getPoints());
+            chamber.add(shape);
             cycle2.add(shape);
             final var shapeShifted = new Shape(shape);
             shapeShifted.moveVertical(cycle1.bottom() - cycle2.bottom());
@@ -73,20 +73,20 @@ public final class Solution {
         final var startRow = solidPoints.stream().mapToInt(p -> p.y).max().orElse(0) + 4;
         final var shape = SHAPES_CYCLE.next().apply(startRow);
         shape.moveHorizontal(direction.next(), solidPoints);
-        while (shape.moveVertical(solidPoints)) {
+        while (shape.moveDown(solidPoints)) {
             shape.moveHorizontal(direction.next(), solidPoints);
         }
         return shape;
     }
 
-    private static boolean cycle(final Board b1, final Board b2) {
-        final var offset = b2.bottom() - b1.bottom();
-        return StreamEx.of(b2.getPoints()).map(p -> new Point(p.x, p.y - offset)).toSet().equals(b1.getPoints());
+    private static boolean equalCycles(final Chamber c1, final Chamber c2) {
+        final var offset = c2.bottom() - c1.bottom();
+        return StreamEx.of(c2.getPoints()).map(p -> new Point(p.x, p.y - offset)).toSet().equals(c1.getPoints());
     }
 }
 
-@Getter
-final class Board {
+@Getter(AccessLevel.PACKAGE)
+final class Chamber {
     private final Set<Shape> shapes = new HashSet<>();
     private final Set<Point> points = new HashSet<>();
 
@@ -113,7 +113,7 @@ final class Board {
     }
 }
 
-@Getter
+@Getter(AccessLevel.PACKAGE)
 final class Shape {
     private static final int MAX_X = 6;
     private static final int MIN_X = 0;
@@ -137,11 +137,11 @@ final class Shape {
         }
     }
 
-    boolean moveVertical(final Set<Point> solidPoints) {
-        move(0, -1);
+    boolean moveDown(final Set<Point> solidPoints) {
+        moveVertical(-1);
         final var overlaps = points.stream().anyMatch(solidPoints::contains);
         if (overlaps) {
-            move(0, 1);
+            moveVertical(1);
         }
         return !overlaps;
     }
