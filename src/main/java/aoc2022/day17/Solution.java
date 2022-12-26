@@ -60,7 +60,7 @@ public final class Solution {
             board.add(shape);
             cycle2.add(shape);
             final var shapeShifted = new Shape(shape);
-            shapeShifted.moveDown(cycle1.bottom() - cycle2.bottom());
+            shapeShifted.moveVertical(cycle1.bottom() - cycle2.bottom());
             if (!cycle1.getPoints().containsAll(shapeShifted.getPoints())) {
                 cycle2.getShapes().forEach(cycle1::add);
                 cycle2.clear();
@@ -73,8 +73,7 @@ public final class Solution {
         final var startRow = solidPoints.stream().mapToInt(p -> p.y).max().orElse(0) + 4;
         final var shape = SHAPES_CYCLE.next().apply(startRow);
         shape.moveHorizontal(direction.next(), solidPoints);
-        while (!shape.atRest(solidPoints)) {
-            shape.moveDown();
+        while (shape.moveVertical(solidPoints)) {
             shape.moveHorizontal(direction.next(), solidPoints);
         }
         return shape;
@@ -138,19 +137,17 @@ final class Shape {
         }
     }
 
-    void moveDown() {
-        moveDown(-1);
+    boolean moveVertical(final Set<Point> solidPoints) {
+        move(0, -1);
+        final var overlaps = points.stream().anyMatch(solidPoints::contains);
+        if (overlaps) {
+            move(0, 1);
+        }
+        return !overlaps;
     }
 
-    void moveDown(final int dy) {
+    void moveVertical(final int dy) {
         move(0, dy);
-    }
-
-    boolean atRest(final Set<Point> solidPoints) {
-        points.forEach(p -> p.translate(0, -1));
-        final var atRest = points.stream().anyMatch(solidPoints::contains);
-        points.forEach(p -> p.translate(0, 1));
-        return atRest;
     }
 
     private void move(final int dx, final int dy) {
