@@ -2,13 +2,13 @@ package aoc2022.day17;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import lombok.ToString;
 import one.util.streamex.EntryStream;
 import one.util.streamex.StreamEx;
 
 import java.awt.Point;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -22,135 +22,40 @@ public final class Solution {
     private static final Iterator<Supplier<Shape>> SHAPES_CYCLE = Iterables.cycle(SHAPES).iterator();
 
     public static void main(String[] args) {
-        final var repeatingBlocks = 1000000000000L - 1186;
-        final var times = (repeatingBlocks / 1700);
-        System.out.println("Times: " + times);
-        System.out.println("Mod: " + (repeatingBlocks % times));
-        System.out.println((2654 * (times - 1)) + 7473);
-        System.out.println(7473 + ((4508 - 1854L) * 588235292));
-        System.out.println((1700L * times) + 1186 + 1900);
-        System.out.println();
-
-        System.out.println(5601 + ((times - 1) * 2654));
-        System.out.println();
-
-        System.out.println((times * 1700) + 1900);
-        System.out.println();
-
-
-//        final var times = BigDecimal.valueOf(1000000000000L)
-//                .add(BigDecimal.valueOf(-1186))
-//                .divide(BigDecimal.valueOf(1700), RoundingMode.DOWN);
-//        System.out.println("Times: " + times);
-//        System.out.println("Mod: " + BigInteger.valueOf(1000000000000L).mod(times.toBigIntegerExact()));
-////        System.out.println( % times);
-//        System.out.println((2654 * (times.longValue() - 1)) + 7473);
-//        System.out.println();
-
-//        System.exit(-1);
-
         final var input = InputLoader.read("day17", "input");
         final var directions = input.chars().boxed().toList();
         final var dirIterator = Iterables.cycle(directions).iterator();
-        Set<Point> solidPoints = new HashSet<>();
-        for (int i = 0; i < 7; ++i) {
-            solidPoints.add(new Point(i, 0));
-        }
+        final Set<Point> solidPoints = Sets.newHashSet(new Bottom().getPoints());
         System.out.println(solidPoints);
         final var iterations = SHAPES.size() * directions.size() * 4;
         System.out.println("Iterations " + iterations);
 
-        solidPoints = getPoints(dirIterator, solidPoints, 1186);
-        var maxHeight1 = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
-        System.out.println(maxHeight1);
-//        printSolidPoints(solidPoints);
-
-        solidPoints = getPoints(dirIterator, solidPoints, 1700);
-        System.out.println(solidPoints.stream().mapToLong(p -> p.y).max().orElse(0));
-        solidPoints = getPoints(dirIterator, solidPoints, 714);
-//        printSolidPoints(solidPoints);
-        System.out.println(solidPoints.stream().mapToLong(p -> p.y).max().orElse(0));
-
-//        var previousMaxHeight = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
-//        System.out.println("initial prev " + previousMaxHeight);
-//        for (int i = 0; i < 100; ++i) {
-//            solidPoints = getPoints(dirIterator, solidPoints, iterations);
-//            final var maxHeight = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
-//            System.out.println("maxHeight=" + maxHeight);
-//            System.out.println("maxHeight - prev = " + (maxHeight - previousMaxHeight));
-//            System.out.println();
-//            previousMaxHeight = maxHeight;
-//        }
-
-
-//        final var times = 1000000000000.0 / iterations;
-//        System.out.println(BigDecimal.valueOf(maxHeight1 * times).toPlainString());
-//        printSolidPoints(solidPoints);
+        fall(dirIterator, solidPoints, 2022);
+        var result1 = solidPoints.stream().mapToLong(p -> p.y).max().orElse(0);
+        System.out.println(result1);
     }
 
-    private static Set<Point> getPoints(Iterator<Integer> dirIterator, Set<Point> solidPoints, int iterations) {
+    private static int fall(final Iterator<Integer> direction, final Set<Point> solidPoints, final int iterations) {
         var shapeCount = 0;
         for (long i = 0; i < iterations; ++i) {
-//            if (i % 1000 == 0) {
-//                System.out.println(i + " " + solidPoints.size());
-//            }
             final var startRow = solidPoints.stream().mapToInt(p -> p.y).max().orElse(0) + 4;
             final var shape = SHAPES_CYCLE.next().get();
             shapeCount++;
             shape.initialize(startRow);
-            final var spaceLeft = -2;
-            final var maxSpace = shape.edgeRight();
-            var dx = 0;
-            for (int j = 0; j < 3; ++j) {
-                dx += dirIterator.next() == '>' ? 1 : -1;
-                dx = Math.min(maxSpace, dx);
-                dx = Math.max(spaceLeft, dx);
-            }
-            shape.move(dx, -3);
             while (true) {
-                shape.moveHorizontal(dirIterator.next(), solidPoints);
+                shape.moveHorizontal(direction.next(), solidPoints);
                 if (shape.atRest(solidPoints)) {
                     break;
                 }
                 shape.moveDown();
             }
-//            System.out.println(shape);
             solidPoints.addAll(shape.getPoints());
-//            if (shape.getPoints().stream().anyMatch(p -> ((p.y) % 25) == 0)) {
-//                System.out.println("COUNT=" + shapeCount + " ITERATION=" + i);
-//                printSolidPoints(solidPoints);
-//            }
-//            final var rows = StreamEx.of(solidPoints).groupingBy(p -> p.y);
-//            if (rows.values().stream().anyMatch(l -> l.size() == 7)) {
-//                final var maxRow = EntryStream.of(rows).filterValues(l -> l.size() == 7).keys().mapToLong
-//                (Long::valueOf).max().orElseThrow();
-//                solidPoints = solidPoints.stream().filter(p -> p.y >= maxRow).collect(Collectors.toSet());
-//            }
-//            System.out.println(solidPoints.size());
         }
         System.out.println("Shape count: " + shapeCount);
-        return solidPoints;
-    }
-
-    private static void printSolidPoints(final Set<Point> solidPoints) {
-        final var points = EntryStream.of(StreamEx.of(solidPoints).groupingBy(p -> p.y)).sortedBy(Map.Entry::getKey)
-                .mapValues(l -> l.stream().map(Point::getX).map(Double::intValue).toList())
-                .mapValues(Solution::lineToString)
-                .values()
-                .map(s -> String.format("|%s|", s))
-                .collect(Collectors.toList());
-        Collections.reverse(points);
-        points.forEach(System.out::println);
-    }
-
-    private static String lineToString(final List<Integer> line) {
-        final var s = IntStream.generate(() -> '-').limit(7).boxed().collect(Collectors.toList());
-        for (final var i : line) {
-            s.set(i, (int) '#');
-        }
-        return StreamEx.of(s).map(i -> (char) i.intValue()).joining();
+        return shapeCount;
     }
 }
+
 
 abstract class Shape {
     private static final int MAX_X = 6;
@@ -168,10 +73,10 @@ abstract class Shape {
         getPoints().forEach(p -> p.translate(dx, dy));
     }
 
-    void moveHorizontal(final int direction, Set<Point> solidPoints) {
-        getPoints().forEach(p -> p.translate(direction == '>' ? 1 : -1, 0));
+    void moveHorizontal(final int direction, final Set<Point> solidPoints) {
+        move(direction == '>' ? 1 : -1, 0);
         if (getPoints().stream().anyMatch(p -> solidPoints.contains(p) || p.x > MAX_X || p.x < MIN_X)) {
-            getPoints().forEach(p -> p.translate(direction == '>' ? -1 : 1, 0));
+            move(direction == '>' ? -1 : 1, 0);
         }
     }
 
@@ -188,7 +93,7 @@ abstract class Shape {
 }
 
 @ToString
-class Line extends Shape {
+final class Line extends Shape {
     private final Set<Point> points = Set.of(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(3, 0));
 
     @Override
@@ -203,7 +108,7 @@ class Line extends Shape {
 }
 
 @ToString
-class Cross extends Shape {
+final class Cross extends Shape {
     private final Set<Point> points = Set.of(new Point(1, 0), new Point(0, 1), new Point(1, 1), new Point(2, 1),
             new Point(1, 2));
 
@@ -216,11 +121,10 @@ class Cross extends Shape {
     int edgeRight() {
         return 2;
     }
-
 }
 
 @ToString
-class L extends Shape {
+final class L extends Shape {
     private final Set<Point> points = Set.of(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(2, 1),
             new Point(2, 2));
 
@@ -233,11 +137,10 @@ class L extends Shape {
     int edgeRight() {
         return 2;
     }
-
 }
 
 @ToString
-class I extends Shape {
+final class I extends Shape {
     private final Set<Point> points = Set.of(new Point(0, 0), new Point(0, 1), new Point(0, 2), new Point(0, 3));
 
     @Override
@@ -249,11 +152,10 @@ class I extends Shape {
     int edgeRight() {
         return 4;
     }
-
 }
 
 @ToString
-class Square extends Shape {
+final class Square extends Shape {
     private final Set<Point> points = Set.of(new Point(0, 0), new Point(1, 0), new Point(0, 1), new Point(1, 1));
 
     @Override
@@ -265,5 +167,41 @@ class Square extends Shape {
     int edgeRight() {
         return 3;
     }
+}
 
+@ToString
+final class Bottom extends Shape {
+    private final Set<Point> points = Set.of(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(3, 0),
+            new Point(4, 0), new Point(5, 0), new Point(6, 0));
+
+    @Override
+    Set<Point> getPoints() {
+        return points;
+    }
+
+    @Override
+    int edgeRight() {
+        return 0;
+    }
+}
+
+final class Printer {
+    static void print(final Set<Point> solidPoints) {
+        final var points = EntryStream.of(StreamEx.of(solidPoints).groupingBy(p -> p.y)).sortedBy(Map.Entry::getKey)
+                .mapValues(l -> l.stream().map(Point::getX).map(Double::intValue).toList())
+                .mapValues(Printer::lineToString)
+                .values()
+                .map(s -> String.format("|%s|", s))
+                .collect(Collectors.toList());
+        Collections.reverse(points);
+        points.forEach(System.out::println);
+    }
+
+    private static String lineToString(final List<Integer> line) {
+        final var s = IntStream.generate(() -> '-').limit(7).boxed().collect(Collectors.toList());
+        for (final var i : line) {
+            s.set(i, (int) '#');
+        }
+        return StreamEx.of(s).map(i -> (char) i.intValue()).joining();
+    }
 }
