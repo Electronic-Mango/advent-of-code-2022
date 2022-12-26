@@ -3,7 +3,6 @@ package aoc2022.day17;
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import one.util.streamex.StreamEx;
 
@@ -29,8 +28,9 @@ public final class Solution {
         final var directions = InputLoader.read("day17", "input").chars().boxed().toList();
         final var directionCycle = Iterables.cycle(directions).iterator();
         final var board = new Board();
-        board.add(new Shape(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(3, 0), new Point(4, 0),
-                new Point(5, 0), new Point(6, 0)));
+        final var bottom = new Shape(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(3, 0),
+                new Point(4, 0), new Point(5, 0), new Point(6, 0));
+        board.add(bottom);
 
         part1(directionCycle, board, 2022);
         var result1 = board.top();
@@ -63,7 +63,7 @@ public final class Solution {
             board.add(shape);
             cycle2.add(shape);
             final var shapeShifted = new Shape(shape);
-            shapeShifted.move(0, cycle1.bottom() - cycle2.bottom());
+            shapeShifted.moveDown(cycle1.bottom() - cycle2.bottom());
             if (!cycle1.getPoints().containsAll(shapeShifted.getPoints())) {
                 cycle2.getShapes().forEach(cycle1::add);
                 cycle2.clear();
@@ -89,7 +89,6 @@ public final class Solution {
     }
 }
 
-@EqualsAndHashCode
 @Getter
 final class Board {
     private final Set<Shape> shapes = new HashSet<>();
@@ -118,7 +117,6 @@ final class Board {
     }
 }
 
-@EqualsAndHashCode
 @Getter
 final class Shape {
     private static final int MAX_X = 6;
@@ -142,7 +140,11 @@ final class Shape {
     }
 
     void moveDown() {
-        move(0, -1);
+        moveDown(-1);
+    }
+
+    void moveDown(final int dy) {
+        move(0, dy);
     }
 
     boolean atRest(final Set<Point> solidPoints) {
@@ -152,7 +154,7 @@ final class Shape {
         return atRest;
     }
 
-    void move(final int dx, final int dy) {
+    private void move(final int dx, final int dy) {
         points.forEach(p -> p.translate(dx, dy));
     }
 }
