@@ -2,8 +2,9 @@ package aoc2022.day17;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import lombok.Getter;
+import one.util.streamex.IntStreamEx;
+import one.util.streamex.LongStreamEx;
 import one.util.streamex.StreamEx;
 
 import java.awt.Point;
@@ -15,41 +16,37 @@ import java.util.function.Function;
 import java.util.function.IntBinaryOperator;
 
 public final class Solution {
+    private static final long ITERATIONS_1 = 2022L;
+    private static final long ITERATIONS_2 = 1_000_000_000_000L;
     private static final List<Function<Integer, Shape>> SHAPES = List.of(
-            y -> new Shape(new Point(2, y), new Point(3, y), new Point(4, y), new Point(5, y)),
-            y -> new Shape(new Point(3, y), new Point(2, 1 + y), new Point(3, 1 + y), new Point(4, 1 + y), new Point(3, 2 + y)),
-            y -> new Shape(new Point(2, y), new Point(3, y), new Point(4, y), new Point(4, 1 + y), new Point(4, 2 + y)),
-            y -> new Shape(new Point(2, y), new Point(2, 1 + y), new Point(2, 2 + y), new Point(2, 3 + y)),
-            y -> new Shape(new Point(2, y), new Point(3, y), new Point(2, 1 + y), new Point(3, 1 + y))
+            y -> new Shape(2, y, 3, y, 4, y, 5, y),
+            y -> new Shape(3, y, 2, 1 + y, 3, 1 + y, 4, 1 + y, 3, 2 + y),
+            y -> new Shape(2, y, 3, y, 4, y, 4, 1 + y, 4, 2 + y),
+            y -> new Shape(2, y, 2, 1 + y, 2, 2 + y, 2, 3 + y),
+            y -> new Shape(2, y, 3, y, 2, 1 + y, 3, 1 + y)
     );
     private static final Iterator<Function<Integer, Shape>> SHAPES_CYCLE = Iterables.cycle(SHAPES).iterator();
 
     public static void main(String[] args) {
-        final var directions = InputLoader.read("day17", "input").chars().boxed().toList();
-        final var directionCycle = Iterables.cycle(directions).iterator();
+        final var directions = Iterables.cycle(InputLoader.read("day17").chars().boxed().toList()).iterator();
         final var board = new Board();
-        final var bottom = new Shape(new Point(0, 0), new Point(1, 0), new Point(2, 0), new Point(3, 0),
-                new Point(4, 0), new Point(5, 0), new Point(6, 0));
-        board.add(bottom);
+        board.add(new Shape(0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0));
 
-        part1(directionCycle, board, 2022);
+        part1(directions, board, ITERATIONS_1);
         var result1 = board.top();
         System.out.println(result1);
 
-        final var cycle = part2(directionCycle, board);
-        final var repeating = 1_000_000_000_000L - 2022;
+        final var cycle = part2(directions, board);
+        final var repeating = ITERATIONS_2 - ITERATIONS_1;
         final var cycleCount = (repeating / cycle.getShapes().size());
-        final var mod = repeating % cycleCount;
-        part1(directionCycle, board, mod);
+        final var remaining = repeating % cycleCount;
+        part1(directions, board, remaining);
         final var result2 = board.top() + ((cycleCount - 2) * (cycle.top() - cycle.bottom()));
         System.out.println(result2);
     }
 
     private static void part1(final Iterator<Integer> directions, final Board board, final long iterations) {
-        for (long i = 0; i < iterations; ++i) {
-            final var newShape = fall(directions, board.getPoints());
-            board.add(newShape);
-        }
+        LongStreamEx.range(iterations).mapToObj(i -> fall(directions, board.getPoints())).forEach(board::add);
     }
 
     private static Board part2(final Iterator<Integer> direction, final Board board) {
@@ -123,12 +120,14 @@ final class Shape {
     private static final int MIN_X = 0;
     private final Set<Point> points;
 
-    Shape(final Point... points) {
-        this.points = Sets.newHashSet(points);
+    Shape(final int... coordinates) {
+        points = IntStreamEx.range(0, coordinates.length, 2)
+                .mapToObj(i -> new Point(coordinates[i], coordinates[i + 1]))
+                .toSet();
     }
 
     Shape(final Shape shape) {
-        this.points = StreamEx.of(shape.points).map(Point::new).toSet();
+        points = StreamEx.of(shape.points).map(Point::new).toSet();
     }
 
     void moveHorizontal(final int direction, final Set<Point> solidPoints) {
