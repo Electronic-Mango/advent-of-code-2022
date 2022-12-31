@@ -29,15 +29,14 @@ public final class Solution {
     private static final int SIDE_SIZE = 50;
 
     public static void main(final String[] args) {
-        final var input = StreamEx.split(InputLoader.read("day22"), INPUT_SEPARATOR)
-                .toListAndThen(Pair::fromCollection);
+        final var input = StreamEx.split(InputLoader.read("day22"), INPUT_SEPARATOR).toListAndThen(Pair::fromCollection);
         final var map = parseMap(input.getValue0());
         final var commands = COMMANDS_PATTERN.matcher(input.getValue1()).results().map(MatchResult::group).toList();
 
-        final int result1 = move(map, commands, Solution::wrapFlat);
+        final int result1 = solve(map, commands, Solution::wrapFlat);
         System.out.println(result1);
 
-        final int result2 = move(map, commands, Solution::wrapCube);
+        final int result2 = solve(map, commands, Solution::wrapCube);
         System.out.println(result2);
     }
 
@@ -51,16 +50,13 @@ public final class Solution {
                 .toMap();
     }
 
-    private static int move(final Map<Point, Boolean> map, final List<String> commands, final Wrapper wrapper) {
+    private static int solve(final Map<Point, Boolean> map, final List<String> commands, final Wrapper wrapper) {
         final var state = new State(getStartingPoint(map), Direction.RIGHT);
-        commands.forEach(command -> nextMove(state, command, map, wrapper));
+        commands.forEach(command -> move(state, command, map, wrapper));
         return ((state.getPoint().y + 1) * 1000) + ((state.getPoint().x + 1) * 4) + (state.getDirection().ordinal());
     }
 
-    private static void nextMove(final State state,
-                                 final String command,
-                                 final Map<Point, Boolean> map,
-                                 final Wrapper wrapper) {
+    private static void move(final State state, final String command, final Map<Point, Boolean> map, final Wrapper wrapper) {
         if (StringUtils.isNumeric(command)) {
             IntStreamEx.range(Integer.parseInt(command)).forEach(i -> stepForward(state, map, wrapper));
         } else {
@@ -112,9 +108,8 @@ public final class Solution {
 
     private static State wrapCube(final State state, final Set<Point> points) {
         final var position = state.getPoint();
-        final var direction = state.getDirection();
         final var side = SIDES.indexOf(Pair.with(position.x / SIDE_SIZE, position.y / SIDE_SIZE));
-        return switch (direction) {
+        return switch (state.getDirection()) {
             case UP -> switch (side) {
                 case 0 -> new State(0, (SIDE_SIZE * 2) + position.x, Direction.RIGHT);
                 case 1 -> new State(position.x - (SIDE_SIZE * 2), (SIDE_SIZE * 4) - 1, Direction.UP);
