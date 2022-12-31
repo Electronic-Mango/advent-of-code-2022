@@ -2,11 +2,9 @@ package aoc2022.day19;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Sets;
-import lombok.AccessLevel;
-import lombok.Getter;
 import one.util.streamex.EntryStream;
+import one.util.streamex.IntStreamEx;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Predicate;
@@ -15,9 +13,7 @@ import java.util.regex.Pattern;
 
 public final class Solution {
     public static void main(final String[] args) {
-        final var input = InputLoader.readLines("day19", "input").stream()
-                .map(Blueprint::new)
-                .toList();
+        final var input = InputLoader.readLines("day19").stream().map(Blueprint::parse).toList();
 
         final var result1 = EntryStream.of(getMaxGeodesPerBlueprint(input, 24))
                 .mapKeys(Math::incrementExact)
@@ -48,26 +44,22 @@ public final class Solution {
                 final var obs = state.obs() + state.obsRobots();
                 final var geode = state.geode() + state.geodeRobots();
                 maxGeodes = Math.max(maxGeodes, geode);
-                newStates.add(new State(ore, clay, obs, geode, state.oreRobots(), state.clayRobots(), state.obsRobots(),
-                        state.geodeRobots()));
-                final var maxOreCost = Collections.max(
-                        List.of(blueprint.getOre(), blueprint.getClay(), blueprint.getObsOre(),
-                                blueprint.getGeodeOre()));
-                if (state.oreRobots() < maxOreCost && state.ore() >= blueprint.getOre()) {
-                    newStates.add(new State(ore - blueprint.getOre(), clay, obs, geode, state.oreRobots() + 1,
+                newStates.add(new State(ore, clay, obs, geode, state.oreRobots(), state.clayRobots(),
+                        state.obsRobots(), state.geodeRobots()));
+                if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
+                    newStates.add(new State(ore - blueprint.ore(), clay, obs, geode, state.oreRobots() + 1,
                             state.clayRobots(), state.obsRobots(), state.geodeRobots()));
                 }
-                if (state.clayRobots() < blueprint.getObsClay() && state.ore() >= blueprint.getClay()) {
-                    newStates.add(new State(ore - blueprint.getClay(), clay, obs, geode, state.oreRobots(),
+                if (state.clayRobots() < blueprint.obsClay() && state.ore() >= blueprint.clay()) {
+                    newStates.add(new State(ore - blueprint.clay(), clay, obs, geode, state.oreRobots(),
                             state.clayRobots() + 1, state.obsRobots(), state.geodeRobots()));
                 }
-                if (state.obsRobots() < blueprint.getGeodeObs() && state.ore() >= blueprint.getObsOre() &&
-                        state.clay() >= blueprint.getObsClay()) {
-                    newStates.add(new State(ore - blueprint.getObsOre(), clay - blueprint.getObsClay(), obs, geode,
+                if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
+                    newStates.add(new State(ore - blueprint.obsOre(), clay - blueprint.obsClay(), obs, geode,
                             state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
                 }
-                if (state.ore() >= blueprint.getGeodeOre() && state.obs() >= blueprint.getGeodeObs()) {
-                    newStates.add(new State(ore - blueprint.getGeodeOre(), clay, obs - blueprint.getGeodeObs(), geode,
+                if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
+                    newStates.add(new State(ore - blueprint.geodeOre(), clay, obs - blueprint.geodeObs(), geode,
                             state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
                 }
             }
@@ -82,30 +74,19 @@ public final class Solution {
     }
 }
 
-@Getter(AccessLevel.PACKAGE)
-final class Blueprint {
-    private static final Pattern INPUT_PATTERN = Pattern.compile("(\\d+)");
-    private final int id;
-    private final int ore;
-    private final int clay;
-    private final int obsOre;
-    private final int obsClay;
-    private final int geodeOre;
-    private final int geodeObs;
+record Blueprint(int id, int ore, int clay, int obsOre, int obsClay, int geodeOre, int geodeObs) {
 
-    Blueprint(final String raw) {
-        final var matcher = INPUT_PATTERN.matcher(raw);
-        id = getInt(matcher);
-        ore = getInt(matcher);
-        clay = getInt(matcher);
-        obsOre = getInt(matcher);
-        obsClay = getInt(matcher);
-        geodeOre = getInt(matcher);
-        geodeObs = getInt(matcher);
+    static Blueprint parse(final String raw) {
+        final var m = Pattern.compile("(\\d+)").matcher(raw);
+        return new Blueprint(getInt(m), getInt(m), getInt(m), getInt(m), getInt(m), getInt(m), getInt(m));
     }
 
-    private int getInt(final Matcher matcher) {
+    private static int getInt(final Matcher matcher) {
         return matcher.find() ? Integer.parseInt(matcher.group()) : -1;
+    }
+
+    int maxOreCost() {
+        return IntStreamEx.of(ore, clay, obsOre, geodeOre).max().orElseThrow();
     }
 }
 
