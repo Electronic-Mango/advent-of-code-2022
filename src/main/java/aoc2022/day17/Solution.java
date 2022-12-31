@@ -2,9 +2,9 @@ package aoc2022.day17;
 
 import aoc2022.input.InputLoader;
 import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
 import lombok.AccessLevel;
 import lombok.Getter;
-import one.util.streamex.IntStreamEx;
 import one.util.streamex.LongStreamEx;
 import one.util.streamex.StreamEx;
 
@@ -120,9 +120,7 @@ final class Shape {
     private final Set<Point> points;
 
     Shape(final int... coordinates) {
-        points = IntStreamEx.range(0, coordinates.length, 2)
-                .mapToObj(i -> new Point(coordinates[i], coordinates[i + 1]))
-                .toSet();
+        points = StreamEx.ofSubLists(Ints.asList(coordinates), 2).map(c -> new Point(c.get(0), c.get(1))).toSet();
     }
 
     Shape(final Shape shape) {
