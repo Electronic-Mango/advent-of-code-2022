@@ -39,39 +39,12 @@ public final class Solution {
         var maxGeodes = 0;
         for (int minute = 0; minute < minutes; ++minute) {
             states = StreamEx.of(states)
-                    .flatMap(state -> nextStates(blueprint, state))
+                    .flatMap(state -> state.nextStates(blueprint))
                     .filter(canMineMoreGeodesThanMax(minutes, minute, maxGeodes))
                     .toSet();
             maxGeodes = states.stream().mapToInt(State::geode).max().orElseThrow();
         }
         return maxGeodes;
-    }
-
-    private static Stream<State> nextStates(final Blueprint blueprint, final State state) {
-        final var nextOre = state.ore() + state.oreRobots();
-        final var nextClay = state.clay() + state.clayRobots();
-        final var nextObs = state.obs() + state.obsRobots();
-        final var nextGeode = state.geode() + state.geodeRobots();
-        if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
-            return Stream.of(new State(nextOre - blueprint.geodeOre(), nextClay, nextObs - blueprint.geodeObs(),
-                    nextGeode, state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
-        }
-        final var nextStates = Stream.<State>builder();
-        nextStates.add(new State(nextOre, nextClay, nextObs, nextGeode, state.oreRobots(), state.clayRobots(),
-                state.obsRobots(), state.geodeRobots()));
-        if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
-            nextStates.add(new State(nextOre - blueprint.ore(), nextClay, nextObs, nextGeode, state.oreRobots() + 1,
-                    state.clayRobots(), state.obsRobots(), state.geodeRobots()));
-        }
-        if (state.clayRobots() < blueprint.obsClay() && state.ore() >= blueprint.clay()) {
-            nextStates.add(new State(nextOre - blueprint.clay(), nextClay, nextObs, nextGeode, state.oreRobots(),
-                    state.clayRobots() + 1, state.obsRobots(), state.geodeRobots()));
-        }
-        if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
-            nextStates.add(new State(nextOre - blueprint.obsOre(), nextClay - blueprint.obsClay(), nextObs, nextGeode,
-                    state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
-        }
-        return nextStates.build();
     }
 
     private static Predicate<State> canMineMoreGeodesThanMax(final int minutes, final int minute, final int maxGeodes) {
@@ -94,4 +67,41 @@ record Blueprint(int id, int ore, int clay, int obsOre, int obsClay, int geodeOr
     }
 }
 
-record State(int ore, int clay, int obs, int geode, int oreRobots, int clayRobots, int obsRobots, int geodeRobots) { }
+record State(int ore, int clay, int obs, int geode, int oreRobots, int clayRobots, int obsRobots, int geodeRobots) {
+    Stream<State> nextStates(final Blueprint blueprint) {
+        if (ore >= blueprint.geodeOre() && obs >= blueprint.geodeObs()) {
+            return Stream.of(next(blueprint.geodeOre(), 0, blueprint.geodeObs(), false, false, false, true));
+        }
+        final var nextStates = Stream.<State>builder();
+        nextStates.add(next(0, 0, 0, false, false, false, false));
+        if (oreRobots < blueprint.maxOreCost() && ore >= blueprint.ore()) {
+            nextStates.add(next(blueprint.ore(), 0, 0, true, false, false, false));
+        }
+        if (clayRobots < blueprint.obsClay() && ore >= blueprint.clay()) {
+            nextStates.add(next(blueprint.clay(), 0, 0, false, true, false, false));
+        }
+        if (obsRobots < blueprint.geodeObs() && ore >= blueprint.obsOre() && clay >= blueprint.obsClay()) {
+            nextStates.add(next(blueprint.obsOre(), blueprint.obsClay(), 0, false, false, true, false));
+        }
+        return nextStates.build();
+    }
+
+    private State next(final int oreCost,
+                       final int clayCost,
+                       final int obsCost,
+                       final boolean buyOreRobot,
+                       final boolean buyClayRobot,
+                       final boolean buyObsRobot,
+                       final boolean buyGeodeRobot) {
+        return new State(
+                ore + oreRobots - oreCost,
+                clay + clayRobots - clayCost,
+                obs + obsRobots - obsCost,
+                geode + geodeRobots,
+                oreRobots + (buyOreRobot ? 1 : 0),
+                clayRobots + (buyClayRobot ? 1 : 0),
+                obsRobots + (buyObsRobot ? 1 : 0),
+                geodeRobots + (buyGeodeRobot ? 1 : 0)
+        );
+    }
+}
