@@ -48,11 +48,15 @@ public final class Solution {
     }
 
     private static Stream<State> nextStates(final Blueprint blueprint, final State state) {
-        final var nextStates = Stream.<State>builder();
         final var nextOre = state.ore() + state.oreRobots();
         final var nextClay = state.clay() + state.clayRobots();
         final var nextObs = state.obs() + state.obsRobots();
         final var nextGeode = state.geode() + state.geodeRobots();
+        if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
+            return Stream.of(new State(nextOre - blueprint.geodeOre(), nextClay, nextObs - blueprint.geodeObs(),
+                    nextGeode, state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
+        }
+        final var nextStates = Stream.<State>builder();
         nextStates.add(new State(nextOre, nextClay, nextObs, nextGeode, state.oreRobots(), state.clayRobots(),
                 state.obsRobots(), state.geodeRobots()));
         if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
@@ -66,10 +70,6 @@ public final class Solution {
         if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
             nextStates.add(new State(nextOre - blueprint.obsOre(), nextClay - blueprint.obsClay(), nextObs, nextGeode,
                     state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
-        }
-        if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
-            nextStates.add(new State(nextOre - blueprint.geodeOre(), nextClay, nextObs - blueprint.geodeObs(),
-                    nextGeode, state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
         }
         return nextStates.build();
     }
