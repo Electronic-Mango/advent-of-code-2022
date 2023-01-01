@@ -3,14 +3,14 @@ package aoc2022.day19;
 import aoc2022.input.InputLoader;
 import one.util.streamex.EntryStream;
 import one.util.streamex.IntStreamEx;
+import one.util.streamex.StreamEx;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Solution {
     public static void main(final String[] args) {
@@ -38,50 +38,48 @@ public final class Solution {
         var states = Set.of(initialState);
         var maxGeodes = 0;
         for (int minute = 0; minute < minutes; ++minute) {
-            states = nextStates(blueprint, states).stream()
-                    .filter(stateCanBePruned(minutes, minute, maxGeodes))
-                    .collect(Collectors.toSet());
+            states = StreamEx.of(states)
+                    .flatMap(state -> newStates(blueprint, state))
+                    .filter(stateShouldNotBePruned(minutes, minute, maxGeodes))
+                    .toSet();
             maxGeodes = states.stream().mapToInt(State::geode).max().orElseThrow();
         }
         return maxGeodes;
     }
 
-    private static Set<State> nextStates(final Blueprint blueprint, final Set<State> states) {
-        final var newStates = new HashSet<State>();
-        for (final var state : states) {
-            final var ore = state.ore() + state.oreRobots();
-            final var clay = state.clay() + state.clayRobots();
-            final var obs = state.obs() + state.obsRobots();
-            final var geode = state.geode() + state.geodeRobots();
-            newStates.add(new State(ore, clay, obs, geode, state.oreRobots(), state.clayRobots(),
-                    state.obsRobots(), state.geodeRobots()));
-            if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
-                newStates.add(new State(ore - blueprint.ore(), clay, obs, geode, state.oreRobots() + 1,
-                        state.clayRobots(), state.obsRobots(), state.geodeRobots()));
-            }
-            if (state.clayRobots() < blueprint.obsClay() && state.ore() >= blueprint.clay()) {
-                newStates.add(new State(ore - blueprint.clay(), clay, obs, geode, state.oreRobots(),
-                        state.clayRobots() + 1, state.obsRobots(), state.geodeRobots()));
-            }
-            if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
-                newStates.add(new State(ore - blueprint.obsOre(), clay - blueprint.obsClay(), obs, geode,
-                        state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
-            }
-            if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
-                newStates.add(new State(ore - blueprint.geodeOre(), clay, obs - blueprint.geodeObs(), geode,
-                        state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
-            }
+    private static Stream<State> newStates(final Blueprint blueprint, final State state) {
+        final var newStates = Stream.<State>builder();
+        final var ore = state.ore() + state.oreRobots();
+        final var clay = state.clay() + state.clayRobots();
+        final var obs = state.obs() + state.obsRobots();
+        final var geode = state.geode() + state.geodeRobots();
+        newStates.add(new State(ore, clay, obs, geode, state.oreRobots(), state.clayRobots(), state.obsRobots(),
+                state.geodeRobots()));
+        if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
+            newStates.add(new State(ore - blueprint.ore(), clay, obs, geode, state.oreRobots() + 1,
+                    state.clayRobots(), state.obsRobots(), state.geodeRobots()));
         }
-        return newStates;
+        if (state.clayRobots() < blueprint.obsClay() && state.ore() >= blueprint.clay()) {
+            newStates.add(new State(ore - blueprint.clay(), clay, obs, geode, state.oreRobots(),
+                    state.clayRobots() + 1, state.obsRobots(), state.geodeRobots()));
+        }
+        if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
+            newStates.add(new State(ore - blueprint.obsOre(), clay - blueprint.obsClay(), obs, geode,
+                    state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
+        }
+        if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
+            newStates.add(new State(ore - blueprint.geodeOre(), clay, obs - blueprint.geodeObs(), geode,
+                    state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
+        }
+        return newStates.build();
     }
 
-    private static Predicate<State> stateCanBePruned(final int minutes, final int minute, final int maxGeodes) {
+    private static Predicate<State> stateShouldNotBePruned(final int minutes, final int minute, final int maxGeodes) {
         return state -> (state.geodeRobots() * (minutes - minute)) + state.geode() >= maxGeodes;
     }
 }
 
 record Blueprint(int id, int ore, int clay, int obsOre, int obsClay, int geodeOre, int geodeObs) {
-
     static Blueprint parse(final String raw) {
         final var m = Pattern.compile("(\\d+)").matcher(raw);
         return new Blueprint(getInt(m), getInt(m), getInt(m), getInt(m), getInt(m), getInt(m), getInt(m));
