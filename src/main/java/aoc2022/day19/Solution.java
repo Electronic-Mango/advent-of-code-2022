@@ -39,42 +39,42 @@ public final class Solution {
         var maxGeodes = 0;
         for (int minute = 0; minute < minutes; ++minute) {
             states = StreamEx.of(states)
-                    .flatMap(state -> newStates(blueprint, state))
-                    .filter(stateShouldNotBePruned(minutes, minute, maxGeodes))
+                    .flatMap(state -> nextStates(blueprint, state))
+                    .filter(canMineMoreGeodesThanMax(minutes, minute, maxGeodes))
                     .toSet();
             maxGeodes = states.stream().mapToInt(State::geode).max().orElseThrow();
         }
         return maxGeodes;
     }
 
-    private static Stream<State> newStates(final Blueprint blueprint, final State state) {
-        final var newStates = Stream.<State>builder();
-        final var ore = state.ore() + state.oreRobots();
-        final var clay = state.clay() + state.clayRobots();
-        final var obs = state.obs() + state.obsRobots();
-        final var geode = state.geode() + state.geodeRobots();
-        newStates.add(new State(ore, clay, obs, geode, state.oreRobots(), state.clayRobots(), state.obsRobots(),
-                state.geodeRobots()));
+    private static Stream<State> nextStates(final Blueprint blueprint, final State state) {
+        final var nextStates = Stream.<State>builder();
+        final var nextOre = state.ore() + state.oreRobots();
+        final var nextClay = state.clay() + state.clayRobots();
+        final var nextObs = state.obs() + state.obsRobots();
+        final var nextGeode = state.geode() + state.geodeRobots();
+        nextStates.add(new State(nextOre, nextClay, nextObs, nextGeode, state.oreRobots(), state.clayRobots(),
+                state.obsRobots(), state.geodeRobots()));
         if (state.oreRobots() < blueprint.maxOreCost() && state.ore() >= blueprint.ore()) {
-            newStates.add(new State(ore - blueprint.ore(), clay, obs, geode, state.oreRobots() + 1,
+            nextStates.add(new State(nextOre - blueprint.ore(), nextClay, nextObs, nextGeode, state.oreRobots() + 1,
                     state.clayRobots(), state.obsRobots(), state.geodeRobots()));
         }
         if (state.clayRobots() < blueprint.obsClay() && state.ore() >= blueprint.clay()) {
-            newStates.add(new State(ore - blueprint.clay(), clay, obs, geode, state.oreRobots(),
+            nextStates.add(new State(nextOre - blueprint.clay(), nextClay, nextObs, nextGeode, state.oreRobots(),
                     state.clayRobots() + 1, state.obsRobots(), state.geodeRobots()));
         }
         if (state.obsRobots() < blueprint.geodeObs() && state.ore() >= blueprint.obsOre() && state.clay() >= blueprint.obsClay()) {
-            newStates.add(new State(ore - blueprint.obsOre(), clay - blueprint.obsClay(), obs, geode,
+            nextStates.add(new State(nextOre - blueprint.obsOre(), nextClay - blueprint.obsClay(), nextObs, nextGeode,
                     state.oreRobots(), state.clayRobots(), state.obsRobots() + 1, state.geodeRobots()));
         }
         if (state.ore() >= blueprint.geodeOre() && state.obs() >= blueprint.geodeObs()) {
-            newStates.add(new State(ore - blueprint.geodeOre(), clay, obs - blueprint.geodeObs(), geode,
-                    state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
+            nextStates.add(new State(nextOre - blueprint.geodeOre(), nextClay, nextObs - blueprint.geodeObs(),
+                    nextGeode, state.oreRobots(), state.clayRobots(), state.obsRobots(), state.geodeRobots() + 1));
         }
-        return newStates.build();
+        return nextStates.build();
     }
 
-    private static Predicate<State> stateShouldNotBePruned(final int minutes, final int minute, final int maxGeodes) {
+    private static Predicate<State> canMineMoreGeodesThanMax(final int minutes, final int minute, final int maxGeodes) {
         return state -> (state.geodeRobots() * (minutes - minute)) + state.geode() >= maxGeodes;
     }
 }
